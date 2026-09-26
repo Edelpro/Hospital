@@ -1,0 +1,258 @@
+<section class="admin-catalogos-module">
+
+  <div class="admin-toolbar">
+    <div>
+      <h2>
+        <i class="bx bx-slider-alt"></i>
+        Administración de catálogos
+      </h2>
+      <p>Gestione listas maestras usadas por el flujo HCU 008 Emergencia.</p>
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="secondary-button" (click)="irAInicio()">
+        <i class="bx bx-home"></i>
+        Volver al inicio
+      </button>
+
+      <button type="button" class="secondary-button" (click)="cargarCatalogos()">
+        <i class="bx bx-refresh"></i>
+        Recargar
+      </button>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span>Total</span>
+      <strong>{{ catalogos.length }}</strong>
+      <small>Elementos registrados</small>
+    </div>
+
+    <div class="summary-card success">
+      <span>Activos</span>
+      <strong>{{ obtenerTotalActivos() }}</strong>
+      <small>Disponibles para el sistema</small>
+    </div>
+
+    <div class="summary-card danger">
+      <span>Inactivos</span>
+      <strong>{{ obtenerTotalInactivos() }}</strong>
+      <small>Ocultos del flujo clínico</small>
+    </div>
+
+    <div class="summary-card info">
+      <span>Tipos</span>
+      <strong>{{ obtenerTiposUsados().length }}</strong>
+      <small>Catálogos agrupados</small>
+    </div>
+  </div>
+
+  <div class="admin-layout">
+
+    <form class="catalog-form" (ngSubmit)="guardarCatalogo()">
+      <div class="form-header">
+        <div>
+          <h3>
+            <i class="bx bx-edit-alt"></i>
+            {{ modoEdicion ? 'Editar catálogo' : 'Nuevo catálogo' }}
+          </h3>
+          <p>Registre o modifique valores permitidos para el sistema.</p>
+        </div>
+
+        <button type="button" class="clear-button" (click)="nuevoCatalogo()">
+          <i class="bx bx-eraser"></i>
+          Limpiar
+        </button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Tipo de catálogo</span>
+          <select [(ngModel)]="formulario.tipo" name="tipo" required>
+            <option *ngFor="let tipo of tiposCatalogo" [value]="tipo">
+              {{ obtenerNombreTipo(tipo) }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span>Código</span>
+          <input
+            type="text"
+            [(ngModel)]="formulario.codigo"
+            name="codigo"
+            placeholder="Ej: DOLOR_ABDOMINAL"
+            required>
+        </label>
+
+        <label>
+          <span>Nombre visible</span>
+          <input
+            type="text"
+            [(ngModel)]="formulario.nombre"
+            name="nombre"
+            placeholder="Ej: Dolor abdominal"
+            required>
+        </label>
+
+        <label>
+          <span>Orden</span>
+          <input
+            type="number"
+            [(ngModel)]="formulario.orden"
+            name="orden"
+            min="0">
+        </label>
+      </div>
+
+      <label class="full-field">
+        <span>Descripción</span>
+        <textarea
+          [(ngModel)]="formulario.descripcion"
+          name="descripcion"
+          rows="3"
+          placeholder="Descripción breve para uso administrativo."></textarea>
+      </label>
+
+      <div class="switch-row">
+        <label class="switch-card">
+          <input type="checkbox" [(ngModel)]="formulario.activo" name="activo">
+          <span>
+            <strong>Activo</strong>
+            <small>Disponible en los módulos clínicos.</small>
+          </span>
+        </label>
+
+        <label class="switch-card">
+          <input type="checkbox" [(ngModel)]="formulario.esSistema" name="esSistema">
+          <span>
+            <strong>Elemento del sistema</strong>
+            <small>Al eliminarlo se desactiva, no se borra definitivamente.</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="secondary-button" (click)="nuevoCatalogo()">
+          Cancelar
+        </button>
+
+        <button type="submit" class="primary-button" [disabled]="guardando">
+          <i class="bx bx-save"></i>
+          {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar' : 'Guardar') }}
+        </button>
+      </div>
+    </form>
+
+    <section class="catalog-list">
+      <div class="list-header">
+        <div>
+          <h3>
+            <i class="bx bx-list-ul"></i>
+            Catálogos registrados
+          </h3>
+          <p>{{ catalogosFiltrados.length }} resultado(s)</p>
+        </div>
+      </div>
+
+      <div class="filters-box">
+        <label>
+          <span>Filtrar por tipo</span>
+          <select [(ngModel)]="filtroTipo" name="filtroTipo" (change)="aplicarFiltros()">
+            <option value="Todos">Todos</option>
+            <option *ngFor="let tipo of obtenerTiposUsados()" [value]="tipo">
+              {{ obtenerNombreTipo(tipo) }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span>Buscar</span>
+          <input
+            type="text"
+            [(ngModel)]="busqueda"
+            name="busqueda"
+            placeholder="Buscar por código, nombre o descripción"
+            (input)="aplicarFiltros()">
+        </label>
+      </div>
+
+      <div class="loading-card" *ngIf="cargando">
+        <i class="bx bx-loader-circle bx-spin"></i>
+        Cargando catálogos...
+      </div>
+
+      <div class="table-wrapper" *ngIf="!cargando && catalogosFiltrados.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Orden</th>
+              <th>Estado</th>
+              <th>Sistema</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of catalogosFiltrados; trackBy: trackById">
+              <td>
+                <strong>{{ obtenerNombreTipo(item.tipo) }}</strong>
+                <small>{{ item.tipo }}</small>
+              </td>
+
+              <td>
+                <code>{{ item.codigo }}</code>
+              </td>
+
+              <td>
+                <strong>{{ item.nombre }}</strong>
+                <small *ngIf="item.descripcion">{{ item.descripcion }}</small>
+              </td>
+
+              <td>{{ item.orden }}</td>
+
+              <td>
+                <span class="status-pill" [class.inactive]="!item.activo">
+                  {{ item.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+
+              <td>
+                <span class="system-pill" [class.no-system]="!item.esSistema">
+                  {{ item.esSistema ? 'Sistema' : 'Editable' }}
+                </span>
+              </td>
+
+              <td>
+                <div class="row-actions">
+                  <button type="button" title="Editar" (click)="editarCatalogo(item)">
+                    <i class="bx bx-edit"></i>
+                  </button>
+
+                  <button type="button" title="Activar / desactivar" (click)="cambiarEstado(item)">
+                    <i class="bx" [ngClass]="item.activo ? 'bx-toggle-right' : 'bx-toggle-left'"></i>
+                  </button>
+
+                  <button type="button" title="Eliminar" class="danger-action" (click)="eliminarCatalogo(item)">
+                    <i class="bx bx-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-box" *ngIf="!cargando && catalogosFiltrados.length === 0">
+        <i class="bx bx-folder-open"></i>
+        <h4>Sin resultados</h4>
+        <p>No hay catálogos que coincidan con los filtros aplicados.</p>
+      </div>
+    </section>
+
+  </div>
+</section>

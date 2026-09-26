@@ -1,0 +1,396 @@
+<section class="report-module" *ngIf="atencionActual; else sinAtencion">
+  <div class="report-toolbar no-print">
+    <div>
+      <h2>8. Reporte final HCU 008</h2>
+      <p>Vista consolidada de la atención para impresión o PDF.</p>
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="secondary-button" (click)="irA('egreso')">
+        <i class="bx bx-left-arrow-alt"></i>
+        Volver a egreso
+      </button>
+
+      <button type="button" class="secondary-button" (click)="cargarReporte()">
+        <i class="bx bx-refresh"></i>
+        Recargar
+      </button>
+
+      <button type="button" class="print-button" (click)="imprimirReporte()" [disabled]="cargandoReporte || !reporte">
+        <i class="bx bxs-file-pdf"></i>
+        Imprimir / Guardar PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-card no-print" *ngIf="cargandoReporte">
+    <i class="bx bx-loader-circle bx-spin"></i>
+    Cargando reporte completo...
+  </div>
+
+  <article class="report-sheet" *ngIf="!cargandoReporte && reporte">
+
+    <header class="report-header">
+      <div class="institution-box">
+        <div class="institution-logo">
+          <i class="bx bx-plus-medical"></i>
+        </div>
+
+        <div>
+          <h1>HCU 008 - EMERGENCIA</h1>
+          <p>Historia Clínica Única - Atención de emergencia</p>
+          <span>Generado: {{ obtenerFechaGeneracion() }}</span>
+        </div>
+      </div>
+
+      <div class="report-code">
+        <span>Atención</span>
+        <strong>AT-{{ obtenerAtencion()?.id || '---' }}</strong>
+      </div>
+    </header>
+
+    <section class="report-section">
+      <h3>1. Datos del paciente</h3>
+
+      <div class="data-grid">
+        <div>
+          <span>Paciente</span>
+          <strong>{{ obtenerNombrePaciente() }}</strong>
+        </div>
+
+        <div>
+          <span>Cédula</span>
+          <strong>{{ obtenerCedulaPaciente() }}</strong>
+        </div>
+
+        <div>
+          <span>Edad</span>
+          <strong>{{ obtenerEdadTexto() }}</strong>
+        </div>
+
+        <div>
+          <span>Sexo</span>
+          <strong>{{ obtenerSexoPaciente() }}</strong>
+        </div>
+
+        <div>
+          <span>Teléfono</span>
+          <strong>{{ obtenerPaciente()?.telefono || 'No registrado' }}</strong>
+        </div>
+
+        <div>
+          <span>Residencia</span>
+          <strong>{{ obtenerResidenciaPaciente() }}</strong>
+        </div>
+
+        <div>
+          <span>Dirección</span>
+          <strong>{{ obtenerPaciente()?.direccion || 'No registrada' }}</strong>
+        </div>
+
+        <div>
+          <span>Historia</span>
+          <strong>HCU-{{ obtenerPaciente()?.id || '---' }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h3>2. Datos de atención</h3>
+
+      <div class="data-grid">
+        <div>
+          <span>Fecha ingreso</span>
+          <strong>{{ formatearFecha(obtenerAtencion()?.fechaIngreso) }}</strong>
+        </div>
+
+        <div>
+          <span>Motivo</span>
+          <strong>{{ obtenerMotivoConsulta() }}</strong>
+        </div>
+
+        <div>
+          <span>Procedencia</span>
+          <strong>{{ obtenerAtencion()?.procedencia || 'No registrada' }}</strong>
+        </div>
+
+        <div>
+          <span>Condición llegada</span>
+          <strong>{{ obtenerAtencion()?.condicionLlegada || 'No registrada' }}</strong>
+        </div>
+
+        <div>
+          <span>Estado</span>
+          <strong>{{ obtenerAtencion()?.estado || 'Sin estado' }}</strong>
+        </div>
+
+        <div>
+          <span>Acompañante</span>
+          <strong>{{ obtenerAcompananteTexto() }}</strong>
+        </div>
+      </div>
+
+      <div class="text-block">
+        <span>Enfermedad actual breve</span>
+        <p>{{ obtenerAtencion()?.enfermedadActualBreve || 'No registrada' }}</p>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h3>3. Triaje</h3>
+
+      <div class="data-grid">
+        <div>
+          <span>Prioridad</span>
+          <strong>{{ obtenerTriaje()?.prioridad || 'No registrada' }}</strong>
+        </div>
+
+        <div>
+          <span>Discriminador</span>
+          <strong>{{ obtenerDiscriminadorTriaje() }}</strong>
+        </div>
+
+        <div>
+          <span>Dolor</span>
+          <strong>{{ obtenerTriaje()?.escalaDolor ?? 'No registrado' }}</strong>
+        </div>
+
+        <div>
+          <span>Glasgow</span>
+          <strong>{{ obtenerTriaje()?.glasgow ? obtenerTriaje()?.glasgow + '/15' : 'No registrado' }}</strong>
+        </div>
+      </div>
+
+      <div class="text-block">
+        <span>Signos vitales</span>
+        <p>{{ obtenerSignosVitalesResumen() }}</p>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h3>4. Evaluación médica</h3>
+
+      <div class="text-block">
+        <span>Enfermedad actual ampliada</span>
+        <p>{{ obtenerEvaluacion()?.enfermedadActualAmpliada || 'No registrada' }}</p>
+      </div>
+
+      <div class="text-block">
+        <span>Examen físico resumido</span>
+        <p>{{ obtenerExamenFisicoResumen() }}</p>
+      </div>
+
+      <div class="text-block">
+        <span>Análisis clínico</span>
+        <p>{{ obtenerEvaluacion()?.analisisClinico || 'No registrado' }}</p>
+      </div>
+
+      <div class="text-block">
+        <span>Plan médico</span>
+        <p>{{ obtenerEvaluacion()?.planMedico || 'No registrado' }}</p>
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h3>5. Diagnósticos</h3>
+
+      <div class="text-block highlighted">
+        <span>Diagnóstico principal</span>
+        <p>{{ obtenerDiagnosticoPrincipal() }}</p>
+      </div>
+
+      <table class="report-table" *ngIf="obtenerDiagnosticos().length > 0">
+        <thead>
+          <tr>
+            <th>CIE-10</th>
+            <th>Descripción</th>
+            <th>Tipo</th>
+            <th>Condición</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let dx of obtenerDiagnosticos(); trackBy: trackById">
+            <td>{{ dx.codigoCie10 }}</td>
+            <td>{{ dx.descripcionCie10 }}</td>
+            <td>{{ dx.tipoDiagnostico }}</td>
+            <td>{{ dx.condicion }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="empty-text" *ngIf="obtenerDiagnosticos().length === 0">
+        Sin diagnósticos registrados.
+      </p>
+    </section>
+
+    <section class="report-section">
+      <h3>6. Prescripciones</h3>
+
+      <table class="report-table" *ngIf="obtenerPrescripciones().length > 0">
+        <thead>
+          <tr>
+            <th>Medicamento</th>
+            <th>Dosis</th>
+            <th>Vía</th>
+            <th>Frecuencia</th>
+            <th>Duración</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let rx of obtenerPrescripciones(); trackBy: trackById">
+            <td>{{ rx.medicamento }}</td>
+            <td>{{ rx.dosis }}</td>
+            <td>{{ rx.viaAdministracion }}</td>
+            <td>{{ rx.frecuencia }}</td>
+            <td>{{ rx.duracion }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="empty-text" *ngIf="obtenerPrescripciones().length === 0">
+        Sin prescripciones registradas.
+      </p>
+    </section>
+
+    <section class="report-section">
+      <h3>7. Exámenes</h3>
+
+      <table class="report-table" *ngIf="obtenerExamenes().length > 0">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Examen</th>
+            <th>Prioridad</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let ex of obtenerExamenes(); trackBy: trackById">
+            <td>{{ ex.tipoExamen }}</td>
+            <td>{{ ex.nombreExamen }}</td>
+            <td>{{ ex.prioridad }}</td>
+            <td>{{ ex.estado }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="empty-text" *ngIf="obtenerExamenes().length === 0">
+        Sin exámenes solicitados.
+      </p>
+    </section>
+
+    <section class="report-section">
+      <h3>8. Evoluciones</h3>
+
+      <div
+        class="evolution-box"
+        *ngFor="let ev of obtenerEvoluciones(); trackBy: trackById">
+
+        <strong>{{ ev.tipoEvolucion }} - {{ ev.condicionPaciente }}</strong>
+        <small>{{ formatearFecha(ev.fechaRegistro) }}</small>
+
+        <p *ngIf="ev.subjetivo"><b>Subjetivo:</b> {{ ev.subjetivo }}</p>
+        <p><b>Objetivo:</b> {{ ev.objetivo }}</p>
+        <p><b>Análisis:</b> {{ ev.analisis }}</p>
+        <p><b>Plan:</b> {{ ev.plan }}</p>
+        <p *ngIf="ev.respuestaTratamiento"><b>Respuesta:</b> {{ ev.respuestaTratamiento }}</p>
+      </div>
+
+      <p class="empty-text" *ngIf="obtenerEvoluciones().length === 0">
+        Sin evoluciones registradas.
+      </p>
+    </section>
+
+    <section class="report-section">
+      <h3>9. Egreso</h3>
+
+      <div class="data-grid">
+        <div>
+          <span>Tipo</span>
+          <strong>{{ obtenerEgreso()?.tipoEgreso || 'No registrado' }}</strong>
+        </div>
+
+        <div>
+          <span>Condición</span>
+          <strong>{{ obtenerEgreso()?.condicionEgreso || 'No registrada' }}</strong>
+        </div>
+
+        <div>
+          <span>Destino</span>
+          <strong>{{ obtenerEgreso()?.destino || 'No registrado' }}</strong>
+        </div>
+
+        <div>
+          <span>Fecha egreso</span>
+          <strong>{{ formatearFecha(obtenerEgreso()?.fechaEgreso) }}</strong>
+        </div>
+      </div>
+
+      <div class="text-block">
+        <span>Resumen clínico</span>
+        <p>{{ obtenerEgreso()?.resumenClinico || 'No registrado' }}</p>
+      </div>
+
+      <div class="text-block">
+        <span>Indicaciones</span>
+        <p>{{ obtenerEgreso()?.indicaciones || 'No registradas' }}</p>
+      </div>
+
+      <div class="text-block">
+        <span>Signos de alarma</span>
+        <p>{{ obtenerEgreso()?.signosAlarma || 'No registrados' }}</p>
+      </div>
+    </section>
+
+    <footer class="report-footer">
+      <div>
+        <span>Profesional responsable</span>
+        <strong>Nombre: __________________________</strong>
+        <small>Completar al firmar el documento</small>
+      </div>
+
+      <div class="signature-box">
+        Firma / sello
+      </div>
+    </footer>
+
+  </article>
+
+</section>
+
+<ng-template #sinAtencion>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bxs-file-pdf"></i>
+      </div>
+
+      <h2>Primero active una atención</h2>
+
+      <p>
+        Para generar el reporte, primero debe abrir una atención activa.
+      </p>
+
+      <div class="empty-care-actions">
+        <button class="empty-action-button" type="button" (click)="irA('pacientes')">
+          <strong>
+            <i class="bx bxs-user-account"></i>
+            Ir a Pacientes
+          </strong>
+          <span>Busque o registre un paciente y cree una atención.</span>
+        </button>
+
+        <button class="empty-action-button" type="button" (click)="irA('inicio')">
+          <strong>
+            <i class="bx bx-home"></i>
+            Ir a Inicio
+          </strong>
+          <span>Abra una atención activa ya registrada.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</ng-template>

@@ -1,0 +1,337 @@
+<p class="readonly-notice" role="status" *ngIf="soloLectura">Atención cerrada: solo consulta.</p>
+<section class="egress-module" *ngIf="atencionActual; else sinAtencion">
+
+  <div class="egress-header-card">
+    <div class="header-left">
+      <div class="header-logo">
+        <i class="bx bx-log-out"></i>
+      </div>
+
+      <div>
+        <h2>7. Egreso</h2>
+        <p>Cierre de atención, condición de salida e indicaciones finales</p>
+      </div>
+    </div>
+
+    <button class="continue-button" type="button" (click)="finalizarYReporte()">
+      Ir a reporte final
+      <i class="bx bx-file"></i>
+    </button>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span>Paciente</span>
+      <strong>{{ obtenerNombrePaciente() }}</strong>
+      <small>Cédula: {{ obtenerCedulaPaciente() }}</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Motivo de consulta</span>
+      <strong>{{ obtenerMotivoConsulta() }}</strong>
+      <small>Dato tomado del ingreso</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Estado</span>
+      <strong>{{ obtenerEstadoTexto() }}</strong>
+      <small>Cierre clínico</small>
+    </div>
+  </div>
+
+  <div class="template-card">
+    <div class="template-header">
+      <div>
+        <h4>Plantillas rápidas de egreso</h4>
+        <p>Seleccione una plantilla y ajuste el texto según el caso.</p>
+      </div>
+    </div>
+
+    <div class="template-grid">
+      <button
+        type="button"
+        *ngFor="let plantilla of plantillas; trackBy: trackByPlantilla"
+        [ngClass]="plantilla.clase"
+        (click)="aplicarPlantilla(plantilla)">
+        <strong>{{ plantilla.titulo }}</strong>
+        <span>{{ plantilla.detalle }}</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="egress-layout">
+
+    <section class="form-panel">
+      <div class="form-card">
+
+        <div class="form-title">
+          <div>
+            <h4>{{ formulario.id ? 'Editar egreso' : 'Nuevo egreso' }}</h4>
+            <p>Registre tipo, condición, destino e indicaciones finales.</p>
+          </div>
+
+          <span class="edit-pill" *ngIf="formulario.id">Registrado</span>
+          <button class="clear-button" type="button" (click)="actualizarDesdeHistoriaClinica()" [disabled]="soloLectura">
+            <i class="bx bx-refresh"></i> Cargar historia clínica
+          </button>
+        </div>
+
+        <div class="helper-card" *ngIf="cargandoCatalogos">
+          <strong>Cargando catálogos</strong>
+          <span>Obteniendo tipo, condición y destino de egreso desde la base de datos.</span>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Tipo de egreso
+            <select [(ngModel)]="formulario.tipoEgreso">
+              <option *ngFor="let tipo of tiposEgreso" [ngValue]="tipo">
+                {{ tipo }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Condición de egreso
+            <select [(ngModel)]="formulario.condicionEgreso">
+              <option *ngFor="let condicion of condicionesEgreso" [ngValue]="condicion">
+                {{ condicion }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Destino
+            <select [(ngModel)]="formulario.destino">
+              <option *ngFor="let destino of destinos" [ngValue]="destino">
+                {{ destino }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Diagnóstico de egreso
+            <input
+              type="text"
+              list="diagnosticos-egreso"
+              maxlength="250"
+              placeholder="Seleccione un diagnóstico registrado o escriba otro"
+              [(ngModel)]="formulario.diagnosticoEgreso">
+            <datalist id="diagnosticos-egreso">
+              <option *ngFor="let diagnostico of diagnosticosDisponibles" [value]="diagnostico"></option>
+            </datalist>
+          </label>
+
+          <label>
+            Fecha de egreso
+            <input
+              type="datetime-local"
+              [(ngModel)]="formulario.fechaEgreso">
+          </label>
+
+          <label>
+            Estado
+            <select [(ngModel)]="formulario.estado">
+              <option [ngValue]="'Registrado'">Registrado</option>
+              <option [ngValue]="'Corregido'">Corregido</option>
+              <option [ngValue]="'Anulado'">Anulado</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Resumen clínico de egreso
+          <textarea
+            rows="4"
+            maxlength="1200"
+            placeholder="Resumen del cuadro, manejo, evolución y condición al egreso."
+            [(ngModel)]="formulario.resumenClinico">
+          </textarea>
+        </label>
+
+        <label>
+          Indicaciones
+          <textarea
+            rows="4"
+            maxlength="1200"
+            placeholder="Indicaciones médicas, reposo, dieta, medidas generales y control."
+            [(ngModel)]="formulario.indicaciones">
+          </textarea>
+        </label>
+
+        <label>
+          Signos de alarma
+          <textarea
+            rows="3"
+            maxlength="1000"
+            placeholder="Síntomas o signos por los que debe retornar inmediatamente."
+            [(ngModel)]="formulario.signosAlarma">
+          </textarea>
+        </label>
+
+        <label>
+          Tratamiento domiciliario
+          <textarea
+            rows="3"
+            maxlength="1000"
+            placeholder="Medicamentos o medidas domiciliarias si aplica."
+            [(ngModel)]="formulario.tratamientoDomiciliario">
+          </textarea>
+        </label>
+
+        <label>
+          Recomendaciones / observaciones
+          <textarea
+            rows="3"
+            maxlength="1000"
+            placeholder="Recomendaciones adicionales o detalles institucionales."
+            [(ngModel)]="formulario.recomendaciones">
+          </textarea>
+        </label>
+
+        <label>
+          Observación
+          <textarea
+            rows="2"
+            maxlength="800"
+            placeholder="Datos adicionales del egreso."
+            [(ngModel)]="formulario.observacion">
+          </textarea>
+        </label>
+
+        <div class="form-grid two-columns">
+          <label>
+            Acompañante
+            <input
+              type="text"
+              maxlength="160"
+              placeholder="Nombre del acompañante"
+              [(ngModel)]="formulario.nombreAcompanante">
+          </label>
+
+          <label>
+            Parentesco
+            <input
+              type="text"
+              maxlength="80"
+              placeholder="Parentesco"
+              [(ngModel)]="formulario.parentescoAcompanante">
+          </label>
+        </div>
+
+        <div class="flag-grid">
+          <label class="check-card" [class.checked]="formulario.requiereControl">
+            <input type="checkbox" [(ngModel)]="formulario.requiereControl">
+            <span>Requiere control</span>
+          </label>
+
+          <label class="check-card urgent" [class.checked]="formulario.requiereReferencia">
+            <input type="checkbox" [(ngModel)]="formulario.requiereReferencia">
+            <span>Requiere referencia</span>
+          </label>
+        </div>
+
+        <div class="helper-card">
+          <strong>Regla rápida</strong>
+          <span>El egreso debe incluir resumen clínico, indicaciones y signos de alarma.</span>
+        </div>
+
+        <div class="form-actions">
+          <button
+            class="save-button"
+            type="button"
+            (click)="guardarEgreso()"
+            [disabled]="soloLectura || (guardandoEgreso)">
+            <i class="bx bx-save"></i>
+            {{ guardandoEgreso ? 'Guardando...' : (formulario.id ? 'Actualizar egreso' : 'Guardar egreso') }}
+          </button>
+
+          <button
+            class="clear-button"
+            type="button"
+            (click)="limpiarFormulario()"
+            [disabled]="guardandoEgreso">
+            <i class="bx bx-eraser"></i>
+            Limpiar
+          </button>
+
+          <button
+            class="delete-button"
+            type="button"
+            *ngIf="puedeEliminarEgreso()"
+            (click)="eliminarEgreso()"
+            [disabled]="soloLectura || (guardandoEgreso)">
+            <i class="bx bx-trash"></i>
+            Eliminar
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="status-card">
+        <div class="status-icon">
+          <i class="bx bx-log-out"></i>
+        </div>
+
+        <h4>Resumen de cierre</h4>
+
+        <p><strong>Tipo:</strong> {{ formulario.tipoEgreso }}</p>
+        <p><strong>Condición:</strong> {{ formulario.condicionEgreso }}</p>
+        <p><strong>Destino:</strong> {{ formulario.destino }}</p>
+        <p><strong>Control:</strong> {{ formulario.requiereControl ? 'Sí' : 'No' }}</p>
+        <p><strong>Referencia:</strong> {{ formulario.requiereReferencia ? 'Sí' : 'No' }}</p>
+
+        <div class="status-ok" *ngIf="egresoActual?.id">
+          <i class="bx bx-check-circle"></i>
+          Egreso guardado correctamente.
+        </div>
+
+        <div class="status-pending" *ngIf="!egresoActual?.id">
+          <i class="bx bx-time-five"></i>
+          Pendiente de guardar egreso.
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+</section>
+
+<ng-template #sinAtencion>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bx-log-out"></i>
+      </div>
+
+      <h2>Primero active una atención</h2>
+
+      <p>
+        Para registrar el egreso, primero debe abrir una atención activa.
+        Puede crearla desde Pacientes o abrir una atención existente desde Inicio.
+      </p>
+
+      <div class="empty-care-actions">
+        <button class="empty-action-button" type="button" (click)="irA('pacientes')">
+          <strong>
+            <i class="bx bxs-user-account"></i>
+            Ir a Pacientes
+          </strong>
+          <span>Busque o registre un paciente y cree una atención.</span>
+        </button>
+
+        <button class="empty-action-button" type="button" (click)="irA('inicio')">
+          <strong>
+            <i class="bx bx-home"></i>
+            Ir a Inicio
+          </strong>
+          <span>Abra una atención activa ya registrada.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</ng-template>

@@ -1,0 +1,292 @@
+<section class="patients-view">
+
+  <div class="patients-header">
+    <div>
+      <h2>Pacientes</h2>
+      <p>Registro, búsqueda y selección de pacientes para emergencia</p>
+    </div>
+
+    <button class="btn-primary" type="button" (click)="alternarFormularioPaciente()">
+      <i class="bx bxs-user-plus"></i>
+      {{ mostrarFormularioPaciente ? 'Cerrar formulario' : 'Nuevo paciente' }}
+    </button>
+  </div>
+
+  <div class="search-bar">
+    <input
+      type="text"
+      placeholder="Buscar paciente por nombre, apellido, cédula, provincia o cantón..."
+      [(ngModel)]="textoBusqueda"
+      (keyup.enter)="buscarPacientes()">
+
+    <button class="btn-primary" type="button" (click)="buscarPacientes()">
+      <i class="bx bx-search"></i>
+      Buscar
+    </button>
+  </div>
+
+  <div class="patient-form" *ngIf="mostrarFormularioPaciente">
+    <div class="form-title-row">
+      <div>
+        <h3>
+          <i class="bx" [class.bx-edit]="modoEdicion" [class.bxs-user-plus]="!modoEdicion"></i>
+          {{ modoEdicion ? 'Editar paciente' : 'Nuevo paciente' }}
+        </h3>
+        <p>
+          {{ modoEdicion ? 'Actualice los datos del paciente seleccionado.' : 'Registre los datos mínimos para iniciar una atención de emergencia.' }}
+        </p>
+      </div>
+
+      <button class="btn-cancel small" type="button" (click)="cancelarFormularioPaciente()">
+        Cancelar
+      </button>
+    </div>
+
+    <div class="grid-3">
+      <label>
+        Cédula
+        <input
+          type="text"
+          maxlength="10"
+          inputmode="numeric"
+          placeholder="Ingrese cédula"
+          [(ngModel)]="nuevoPaciente.cedula">
+      </label>
+
+      <label>
+        Nombres
+        <input
+          type="text"
+          placeholder="Ingrese nombres"
+          [(ngModel)]="nuevoPaciente.nombres">
+      </label>
+
+      <label>
+        Apellidos
+        <input
+          type="text"
+          placeholder="Ingrese apellidos"
+          [(ngModel)]="nuevoPaciente.apellidos">
+      </label>
+    </div>
+
+    <div class="grid-4">
+      <label>
+        Fecha de nacimiento
+        <input
+          type="date"
+          [(ngModel)]="nuevoPaciente.fechaNacimiento">
+      </label>
+
+      <label>
+        Sexo
+        <select [(ngModel)]="nuevoPaciente.sexo">
+          <option *ngFor="let sexo of sexos" [ngValue]="sexo">
+            {{ sexo }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        Teléfono
+        <input
+          type="text"
+          placeholder="Ingrese teléfono"
+          [(ngModel)]="nuevoPaciente.telefono">
+      </label>
+
+      <label>
+        Dirección
+        <input
+          type="text"
+          placeholder="Ingrese dirección"
+          [(ngModel)]="nuevoPaciente.direccion">
+      </label>
+    </div>
+
+    <div class="grid-3">
+      <label>
+        Provincia
+        <select
+          [(ngModel)]="nuevoPaciente.provincia"
+          (change)="actualizarCantones()">
+          <option *ngFor="let provincia of provincias" [ngValue]="provincia.nombre">
+            {{ provincia.nombre }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        Cantón
+        <select
+          [(ngModel)]="nuevoPaciente.canton"
+          (change)="actualizarParroquias()">
+          <option *ngFor="let canton of cantonesDisponibles" [ngValue]="canton.nombre">
+            {{ canton.nombre }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        Parroquia
+        <select [(ngModel)]="nuevoPaciente.parroquia">
+          <option *ngFor="let parroquia of parroquiasDisponibles" [ngValue]="parroquia">
+            {{ parroquia }}
+          </option>
+        </select>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button
+        class="btn-primary"
+        type="button"
+        (click)="guardarPaciente()"
+        [disabled]="guardando">
+        <i class="bx bx-save"></i>
+        {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar paciente' : 'Guardar paciente') }}
+      </button>
+
+      <button
+        class="btn-secondary"
+        type="button"
+        (click)="limpiarFormularioPaciente()"
+        [disabled]="guardando">
+        <i class="bx bx-eraser"></i>
+        Limpiar
+      </button>
+
+      <button
+        class="btn-cancel"
+        type="button"
+        (click)="cancelarFormularioPaciente()"
+        [disabled]="guardando">
+        <i class="bx bx-x-circle"></i>
+        Cancelar
+      </button>
+    </div>
+  </div>
+
+  <div class="patients-grid">
+
+    <div class="patients-list">
+      <div class="section-title-row">
+        <h3>Lista de pacientes</h3>
+        <span class="patients-count">Total: {{ pacientesVista.length }}</span>
+      </div>
+
+      <div
+        class="patient-list-item"
+        *ngFor="let paciente of pacientesVista; trackBy: trackByPaciente"
+        (click)="seleccionarPacienteLocal(paciente)"
+        [class.active]="pacienteEstaSeleccionado(paciente)">
+
+        <div class="patient-list-main">
+          <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
+          <span>{{ obtenerEdadTexto(paciente.fechaNacimiento) }}</span>
+          <small>{{ paciente.cedula }}</small>
+        </div>
+
+        <div class="patient-actions">
+          <button
+            class="icon-button edit"
+            type="button"
+            title="Editar paciente"
+            (click)="editarPaciente(paciente, $event)">
+            <i class="bx bx-edit"></i>
+          </button>
+
+          <button
+            class="icon-button delete"
+            type="button"
+            *ngIf="puedeEliminarPaciente()"
+            [disabled]="eliminandoId === paciente.id"
+            title="Eliminar paciente duplicado"
+            (click)="eliminarPaciente(paciente, $event)">
+            <i class="bx bx-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="pacientesVista.length === 0">
+        <div>
+          <div class="empty-icon">
+            <i class="bx bx-search"></i>
+          </div>
+          <h4>No se encontraron pacientes</h4>
+          <p>Intente buscar por nombres, apellidos o cédula.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="patient-history">
+      <h3>Resumen del paciente</h3>
+
+      <div class="empty-state" *ngIf="!pacienteResumen">
+        <div>
+          <div class="empty-icon">
+            <i class="bx bxs-user"></i>
+          </div>
+          <h4>Seleccione un paciente</h4>
+          <p>Al seleccionar un paciente, aquí verá su información principal antes de crear una atención.</p>
+        </div>
+      </div>
+
+      <div class="history-list" *ngIf="pacienteResumen as paciente">
+
+        <div class="selected-patient-card">
+          <div class="selected-avatar">
+            {{ (paciente.nombres || 'P').charAt(0) }}
+          </div>
+
+          <div>
+            <span>Paciente seleccionado</span>
+            <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
+            <small>Cédula: {{ paciente.cedula }}</small>
+          </div>
+        </div>
+
+        <div class="history-item">
+          <div class="history-date">Identificación</div>
+          <div class="history-diagnosis">
+            Cédula: {{ paciente.cedula }}
+          </div>
+          <div class="history-notes">
+            {{ paciente.nombres }} {{ paciente.apellidos }}
+          </div>
+        </div>
+
+        <div class="history-item">
+          <div class="history-date">Datos personales</div>
+          <div class="history-diagnosis">
+            {{ paciente.nombres }} {{ paciente.apellidos }}
+          </div>
+          <div class="history-notes">
+            Sexo: {{ paciente.sexo || 'No registrado' }} ·
+            Edad: {{ obtenerEdadTexto(paciente.fechaNacimiento) }} ·
+            Teléfono: {{ paciente.telefono || 'No registrado' }}
+          </div>
+        </div>
+
+        <div class="history-item">
+          <div class="history-date">Dirección</div>
+          <div class="history-diagnosis">
+            {{ paciente.direccion || 'Sin dirección registrada' }}
+          </div>
+          <div class="history-notes">
+            {{ paciente.provincia || 'Sin provincia' }} /
+            {{ paciente.canton || 'Sin cantón' }} /
+            {{ paciente.parroquia || 'Sin parroquia' }}
+          </div>
+        </div>
+
+        <button class="btn-primary full" type="button" (click)="confirmarSeleccionPaciente()">
+          <i class="bx bx-plus-medical"></i>
+          Crear atención para este paciente
+        </button>
+
+      </div>
+    </div>
+
+  </div>
+</section>

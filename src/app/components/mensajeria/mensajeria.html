@@ -1,0 +1,31 @@
+<section class="messaging-module" *ngIf="atencionActual; else sinAtencion">
+  <header class="messaging-header">
+    <div class="header-icon"><i class="bx bx-message-rounded-dots"></i></div>
+    <div><h2>Mensajería clínica</h2><p>Prepare y comparta información de la atención con servicios autorizados.</p></div>
+  </header>
+
+  <div class="privacy-notice"><i class="bx bx-shield-quarter"></i><span>Use únicamente contactos institucionales autorizados. Revise el contenido antes de enviarlo.</span></div>
+
+  <div class="messaging-layout">
+    <div class="message-card">
+      <div class="form-grid">
+        <label>Área destinataria
+          <select [(ngModel)]="destinatario" (ngModelChange)="prepararResumen()">
+            <option>Laboratorio / diagnóstico</option><option>Imagenología</option><option>Especialista / interconsulta</option><option>Admisiones</option><option>Otro servicio</option>
+          </select>
+        </label>
+        <label>Correo institucional<input type="email" [(ngModel)]="correo" placeholder="diagnostico@hospital.com"></label>
+        <label>WhatsApp con código de país<input type="tel" [(ngModel)]="telefono" placeholder="593999999999"></label>
+      </div>
+      <label>Asunto<input type="text" maxlength="180" [(ngModel)]="asunto"></label>
+      <label>Mensaje<textarea rows="15" maxlength="5000" [(ngModel)]="mensaje"></textarea></label>
+      <div class="message-actions">
+        <button class="email-button" type="button" (click)="enviarCorreo()"><i class="bx bx-envelope"></i> Abrir correo</button>
+        <button class="whatsapp-button" type="button" (click)="enviarWhatsApp()"><i class="bx bxl-whatsapp"></i> Abrir WhatsApp</button>
+        <button class="copy-button" type="button" (click)="copiarMensaje()"><i class="bx bx-copy"></i> Copiar</button>
+      </div>
+    </div>
+    <aside class="scope-card"><h3>Contenido incluido</h3><ul><li>Paciente y atención</li><li>Diagnósticos registrados</li><li>Exámenes solicitados</li><li>Tratamiento actual</li><li>Última evolución</li></ul><p>El sistema abre su aplicación de correo o WhatsApp. Usted confirma el envío final.</p></aside>
+  </div>
+</section>
+<ng-template #sinAtencion><section class="empty-message"><i class="bx bx-message-square-error"></i><h2>Seleccione una atención</h2><p>Abra una atención desde el tablero para preparar un mensaje clínico.</p></section></ng-template>

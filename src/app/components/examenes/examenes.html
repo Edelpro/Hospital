@@ -1,0 +1,417 @@
+<p class="readonly-notice" role="status" *ngIf="soloLectura">Atención cerrada: solo consulta.</p>
+<section class="exam-module" *ngIf="atencionActual; else sinAtencion">
+
+  <div class="exam-header-card">
+    <div class="header-left">
+      <div class="header-logo">
+        <i class="bx bx-test-tube"></i>
+      </div>
+
+      <div>
+        <h2>5. Exámenes</h2>
+        <p>Solicitud de laboratorio, imagen y procedimientos diagnósticos</p>
+      </div>
+    </div>
+
+    <button
+      class="continue-button"
+      type="button"
+      (click)="continuarEvoluciones()">
+      Continuar a evoluciones
+      <i class="bx bx-right-arrow-alt"></i>
+    </button>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span>Paciente</span>
+      <strong>{{ obtenerNombrePaciente() }}</strong>
+      <small>Cédula: {{ obtenerCedulaPaciente() }}</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Motivo de consulta</span>
+      <strong>{{ obtenerMotivoConsulta() }}</strong>
+      <small>Dato tomado del ingreso</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Total exámenes</span>
+      <strong>{{ obtenerTotalExamenes() }}</strong>
+      <small>Solicitados en esta atención</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Urgentes</span>
+      <strong>{{ obtenerTotalUrgentes() }}</strong>
+      <small>Prioridad clínica</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Pendientes</span>
+      <strong>{{ obtenerTotalPendientes() }}</strong>
+      <small>Sin resultado disponible</small>
+    </div>
+  </div>
+
+  <div class="safety-notice">
+    <div>
+      <i class="bx bx-shield-quarter"></i>
+    </div>
+
+    <p>
+      Las solicitudes deben justificarse con indicación clínica. Priorice exámenes según riesgo,
+      disponibilidad institucional y condición del paciente.
+    </p>
+  </div>
+
+  <div class="frequent-card">
+    <div class="frequent-header">
+      <div>
+        <h4>Exámenes frecuentes</h4>
+        <p>Seleccione una opción rápida o cree una solicitud manual.</p>
+      </div>
+    </div>
+
+    <div class="frequent-tools">
+      <input
+        type="text"
+        placeholder="Buscar examen, grupo, tipo o indicación..."
+        [(ngModel)]="busquedaExamenFrecuente">
+
+      <button
+        type="button"
+        class="clear-search-button"
+        (click)="limpiarBusquedaExamen()"
+        *ngIf="busquedaExamenFrecuente">
+        <i class="bx bx-x-circle"></i>
+        Limpiar búsqueda
+      </button>
+    </div>
+
+    <div class="empty-templates" *ngIf="examenesFrecuentesFiltrados.length === 0">
+      No se encontraron exámenes frecuentes con esa búsqueda. Use el formulario manual.
+    </div>
+
+    <div class="frequent-grid">
+      <button
+        type="button"
+        *ngFor="let item of examenesFrecuentesFiltrados; trackBy: trackByExamenFrecuente"
+        [ngClass]="item.clase"
+        (click)="seleccionarExamenFrecuente(item)">
+        <strong>{{ item.nombreExamen }}</strong>
+        <span>{{ item.tipoExamen }} · {{ item.prioridad }}</span>
+        <small>{{ item.grupo }}</small>
+      </button>
+    </div>
+  </div>
+
+  <div class="exam-layout">
+
+    <section class="form-panel">
+
+      <div class="form-card">
+
+        <div class="form-title">
+          <div>
+            <h4>
+              {{ formulario.id ? 'Editar examen' : 'Nueva solicitud de examen' }}
+            </h4>
+
+            <p>
+              Registre tipo, nombre del examen, prioridad e indicación clínica.
+            </p>
+          </div>
+
+          <span class="edit-pill" *ngIf="formulario.id">
+            En edición
+          </span>
+        </div>
+
+        <div class="helper-card" *ngIf="cargandoCatalogos">
+          <strong>Cargando catálogos</strong>
+          <span>Obteniendo tipos, prioridades y estados desde la base de datos.</span>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Tipo de examen
+            <select [(ngModel)]="formulario.tipoExamen">
+              <option *ngFor="let tipo of tiposExamen" [ngValue]="tipo">
+                {{ tipo }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Nombre del examen
+            <input
+              type="text"
+              maxlength="180"
+              placeholder="Ejemplo: Hemograma completo"
+              [(ngModel)]="formulario.nombreExamen">
+          </label>
+
+          <label>
+            Prioridad
+            <select [(ngModel)]="formulario.prioridad">
+              <option *ngFor="let prioridad of prioridades" [ngValue]="prioridad">
+                {{ prioridad }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Indicación clínica
+          <textarea
+            rows="4"
+            maxlength="800"
+            placeholder="Justifique por qué se solicita el examen: diagnóstico presuntivo, síntomas, signos vitales, hallazgos o evolución."
+            [(ngModel)]="formulario.indicacionClinica">
+          </textarea>
+        </label>
+
+        <label>
+          Observación
+          <textarea
+            rows="3"
+            maxlength="600"
+            placeholder="Especifique segmento anatómico, condiciones del paciente, preparación o detalles relevantes."
+            [(ngModel)]="formulario.observacion">
+          </textarea>
+        </label>
+
+        <div class="form-grid">
+          <label>
+            Estado
+            <select [(ngModel)]="formulario.estado">
+              <option *ngFor="let estado of estadosExamen" [ngValue]="estado">
+                {{ estado }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Resultado resumen
+            <input
+              type="text"
+              maxlength="500"
+              placeholder="Opcional: resumen del resultado si ya existe"
+              [(ngModel)]="formulario.resultadoResumen">
+          </label>
+
+          <label>
+            Fecha resultado
+            <input
+              type="datetime-local"
+              [(ngModel)]="formulario.fechaResultado">
+          </label>
+        </div>
+
+        <div class="flag-grid">
+          <label class="check-card" [class.checked]="formulario.requiereAyuno">
+            <input
+              type="checkbox"
+              [(ngModel)]="formulario.requiereAyuno">
+
+            <span>Requiere ayuno</span>
+          </label>
+
+          <label class="check-card urgent" [class.checked]="formulario.esUrgente">
+            <input
+              type="checkbox"
+              [(ngModel)]="formulario.esUrgente">
+
+            <span>Examen urgente</span>
+          </label>
+        </div>
+
+        <div class="helper-card">
+          <strong>Regla rápida</strong>
+
+          <span>
+            Evite duplicar la misma solicitud activa. Si necesita corregir, use Editar.
+          </span>
+        </div>
+
+        <div class="template-save-row">
+          <label>
+            Nombre de la plantilla
+            <input type="text" maxlength="60" placeholder="Ejemplo: Perfil de emergencia" [(ngModel)]="nombreNuevaPlantilla" [disabled]="soloLectura">
+          </label>
+          <small>Complete la solicitud y guárdela como opción rápida para este equipo.</small>
+        </div>
+
+        <div class="form-actions">
+          <button class="clear-button" type="button" (click)="crearPlantillaPersonalizada()" [disabled]="soloLectura || guardandoExamen"><i class="bx bx-bookmark-plus"></i> Crear plantilla</button>
+          <button
+            class="save-button"
+            type="button"
+            (click)="guardarExamen()"
+            [disabled]="soloLectura || (guardandoExamen)">
+            <i class="bx bx-save"></i>
+            {{ guardandoExamen ? 'Guardando...' : (formulario.id ? 'Actualizar examen' : 'Guardar examen') }}
+          </button>
+
+          <button
+            class="clear-button"
+            type="button"
+            (click)="limpiarFormularioExamen()"
+            [disabled]="guardandoExamen">
+            <i class="bx bx-eraser"></i>
+            Limpiar
+          </button>
+
+          <button
+            class="cancel-button"
+            type="button"
+            (click)="cancelarEdicion()"
+            [disabled]="guardandoExamen">
+            <i class="bx bx-x-circle"></i>
+            {{ formulario.id ? 'Cancelar edición' : 'Cancelar' }}
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+    <aside class="list-panel">
+
+      <div class="list-card">
+        <div class="list-header">
+          <div>
+            <h4>Exámenes solicitados</h4>
+            <p>Solicitudes diagnósticas de esta atención.</p>
+          </div>
+
+          <span>{{ examenes.length }}</span>
+        </div>
+
+        <div class="empty-state" *ngIf="examenes.length === 0 && !cargandoExamenes">
+          <div>
+            <i class="bx bx-test-tube"></i>
+          </div>
+
+          <strong>Sin exámenes solicitados</strong>
+          <p>Puede solicitar exámenes o continuar a evoluciones si no aplica.</p>
+        </div>
+
+        <div class="loading-state" *ngIf="cargandoExamenes">
+          Cargando exámenes...
+        </div>
+
+        <div
+          class="exam-item"
+          *ngFor="let examen of examenes; trackBy: trackByExamen"
+          [ngClass]="obtenerClaseExamen(examen)">
+
+          <div class="exam-main">
+            <div class="exam-icon">
+              <i class="bx bx-test-tube"></i>
+            </div>
+
+            <div>
+              <strong>{{ examen.nombreExamen }}</strong>
+
+              <small>
+                {{ examen.tipoExamen }}
+                · {{ examen.prioridad }}
+              </small>
+
+              <div class="badges">
+                <span [ngClass]="obtenerClaseEstado(examen.estado)">
+                  {{ examen.estado || 'Solicitado' }}
+                </span>
+
+                <span *ngIf="examen.esUrgente" class="badge-urgent">
+                  Urgente
+                </span>
+
+                <span *ngIf="examen.requiereAyuno" class="badge-fasting">
+                  Ayuno
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p>
+            <strong>Indicación:</strong> {{ examen.indicacionClinica }}
+          </p>
+
+          <p *ngIf="examen.observacion">
+            <strong>Observación:</strong> {{ examen.observacion }}
+          </p>
+
+          <p *ngIf="examen.resultadoResumen">
+            <strong>Resultado:</strong> {{ examen.resultadoResumen }}
+          </p>
+
+          <small class="date-text">
+            Solicitado: {{ formatearFecha(examen.fechaSolicitud) }}
+          </small>
+
+          <small class="date-text" *ngIf="examen.fechaResultado">
+            Resultado: {{ formatearFecha(examen.fechaResultado) }}
+          </small>
+
+          <div class="item-actions">
+            <button [disabled]="soloLectura" type="button" (click)="editarExamen(examen)">
+              <i class="bx bx-edit"></i>
+              Editar
+            </button>
+
+            <button [disabled]="soloLectura"
+              type="button"
+              class="danger-button"
+              *ngIf="puedeEliminarExamen(examen)"
+              (click)="eliminarExamen(examen)">
+              <i class="bx bx-trash"></i>
+              Eliminar
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+</section>
+
+<ng-template #sinAtencion>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bx-test-tube"></i>
+      </div>
+
+      <h2>Primero active una atención</h2>
+
+      <p>
+        Para solicitar exámenes, primero debe abrir una atención activa.
+        Puede crearla desde Pacientes o abrir una atención existente desde Inicio.
+      </p>
+
+      <div class="empty-care-actions">
+        <button class="empty-action-button" type="button" (click)="irA('pacientes')">
+          <strong>
+            <i class="bx bxs-user-account"></i>
+            Ir a Pacientes
+          </strong>
+          <span>Busque o registre un paciente y cree una atención.</span>
+        </button>
+
+        <button class="empty-action-button" type="button" (click)="irA('inicio')">
+          <strong>
+            <i class="bx bx-home"></i>
+            Ir a Inicio
+          </strong>
+          <span>Abra una atención activa ya registrada.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</ng-template>

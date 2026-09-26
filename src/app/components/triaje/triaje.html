@@ -1,0 +1,573 @@
+<p class="readonly-notice" role="status" *ngIf="soloLectura">Atención cerrada: solo consulta.</p>
+<section class="triage-page" *ngIf="atencionActual; else sinAtencion">
+
+  <section class="triage-layout">
+
+    <section class="form-panel">
+
+      <div class="section-title">
+        <div class="title-left">
+          <div class="module-icon">
+            <i class="bx bx-pulse"></i>
+          </div>
+
+          <div>
+            <h2>1. Triaje</h2>
+            <p>Valoración inicial del paciente en emergencia</p>
+          </div>
+        </div>
+
+        <div class="section-actions">
+          <button
+            class="save-button"
+            type="button"
+            (click)="guardarTriaje()"
+            [disabled]="soloLectura || (guardandoTriaje)">
+            <i class="bx bx-save"></i>
+            {{ guardandoTriaje ? 'Guardando...' : 'Guardar y continuar a evaluación' }}
+          </button>
+
+          <button
+            class="clear-button"
+            type="button"
+            (click)="limpiarDatosTriaje()"
+            [disabled]="guardandoTriaje">
+            <i class="bx bx-eraser"></i>
+            Limpiar datos
+          </button>
+        </div>
+      </div>
+
+      <div class="form-section priority-section">
+        <h4>Prioridad de atención</h4>
+
+        <div class="helper-card" *ngIf="cargandoCatalogos">
+          <strong>Cargando catálogos</strong>
+          <span>Obteniendo prioridades y discriminadores desde la base de datos.</span>
+        </div>
+
+        <div class="priority-buttons">
+          <button
+            type="button"
+            *ngFor="let prioridad of prioridadesTriaje"
+            class="priority-button"
+            [ngClass]="obtenerClasePrioridadBoton(prioridad)"
+            [class.active]="triaje.prioridad === prioridad"
+            (click)="seleccionarPrioridad(prioridad)">
+            <span></span>
+            {{ prioridad }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Información general</h4>
+
+        <div class="grid-2">
+          <label>
+            Discriminador clínico
+            <select [(ngModel)]="triaje.discriminadorClinico" (change)="actualizarDiscriminadorClinico()">
+              <option [ngValue]="null">Seleccione una opción</option>
+
+              <option *ngFor="let discriminador of discriminadoresTriaje" [ngValue]="discriminador">
+                {{ discriminador }}
+              </option>
+            </select>
+          </label>
+
+          <div class="pain-field">
+            <label>Escala de dolor</label>
+
+            <div class="pain-control">
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="1"
+                [ngModel]="triaje.escalaDolor ?? 0"
+                (ngModelChange)="actualizarDolor($event)"
+                [style.background]="obtenerFondoDolor()">
+
+              <div class="pain-number">
+                {{ triaje.escalaDolor ?? 0 }}
+              </div>
+            </div>
+
+            <div class="pain-scale">
+              <span>0</span>
+              <span>Sin dolor</span>
+              <span>10</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-1" *ngIf="triaje.discriminadorClinico === 'Otro'">
+          <label>
+            Especifique discriminador
+            <input
+              type="text"
+              placeholder="Describa el discriminador clínico"
+              [(ngModel)]="triaje.discriminadorClinicoOtro">
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section signos-section">
+        <div class="section-inline-title">
+          <div>
+            <h4>Signos vitales principales</h4>
+            <p>Registre los valores clínicos iniciales del paciente.</p>
+          </div>
+        </div>
+
+        <div class="vital-grid">
+
+          <label class="vital-card">
+            <span class="vital-title">Frecuencia cardíaca</span>
+
+            <div class="vital-body">
+              <span class="vital-icon">
+                <i class="bx bx-heart"></i>
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                [(ngModel)]="triaje.frecuenciaCardiaca">
+            </div>
+
+            <span class="vital-unit">latidos por minuto</span>
+          </label>
+
+          <label class="vital-card">
+            <span class="vital-title">Frecuencia respiratoria</span>
+
+            <div class="vital-body">
+              <span class="vital-icon">
+                <i class="bx bx-wind"></i>
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                [(ngModel)]="triaje.frecuenciaRespiratoria">
+            </div>
+
+            <span class="vital-unit">respiraciones por minuto</span>
+          </label>
+
+          <label class="vital-card">
+            <span class="vital-title">Temperatura</span>
+
+            <div class="vital-body">
+              <span class="vital-icon">
+                <i class="bx bxs-thermometer"></i>
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="0"
+                [(ngModel)]="triaje.temperatura">
+            </div>
+
+            <span class="vital-unit">grados Celsius</span>
+          </label>
+
+          <label class="vital-card">
+            <span class="vital-title">Saturación de oxígeno</span>
+
+            <div class="vital-body">
+              <span class="vital-icon">
+                <i class="bx bx-water"></i>
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                max="100"
+                placeholder="0"
+                [(ngModel)]="triaje.saturacionOxigeno">
+            </div>
+
+            <span class="vital-unit">porcentaje</span>
+          </label>
+
+          <label class="vital-card">
+            <span class="vital-title">Glicemia capilar</span>
+
+            <div class="vital-body">
+              <span class="vital-icon">
+                <i class="bx bx-test-tube"></i>
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                [(ngModel)]="triaje.glicemiaCapilar">
+            </div>
+
+            <span class="vital-unit">miligramos por decilitro</span>
+          </label>
+
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Presión arterial</h4>
+
+        <div class="grid-4">
+          <label>
+            Presión sistólica
+            <input
+              type="number"
+              min="0"
+              placeholder="mmHg"
+              [(ngModel)]="triaje.presionSistolica">
+          </label>
+
+          <label>
+            Presión diastólica
+            <input
+              type="number"
+              min="0"
+              placeholder="mmHg"
+              [(ngModel)]="triaje.presionDiastolica">
+          </label>
+
+          <div class="calc-card">
+            <span>Presión arterial media</span>
+            <strong>{{ calcularPresionArterialMedia() ?? 'No calculada' }}</strong>
+            <small>Automático</small>
+          </div>
+
+          <div class="calc-card">
+            <span>Presión de pulso</span>
+            <strong>{{ calcularPresionPulso() ?? 'No calculada' }}</strong>
+            <small>Automático</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Glasgow</h4>
+
+        <div class="grid-4">
+          <label>
+            Apertura ocular
+            <select [(ngModel)]="triaje.glasgowOcular">
+              <option [ngValue]="null">Seleccione</option>
+              <option [ngValue]="4">Espontánea</option>
+              <option [ngValue]="3">Al llamado</option>
+              <option [ngValue]="2">Al dolor</option>
+              <option [ngValue]="1">Ninguna</option>
+            </select>
+          </label>
+
+          <label>
+            Respuesta verbal
+            <select [(ngModel)]="triaje.glasgowVerbal">
+              <option [ngValue]="null">Seleccione</option>
+              <option [ngValue]="5">Orientado</option>
+              <option [ngValue]="4">Confuso</option>
+              <option [ngValue]="3">Palabras inapropiadas</option>
+              <option [ngValue]="2">Sonidos incomprensibles</option>
+              <option [ngValue]="1">Ninguna</option>
+            </select>
+          </label>
+
+          <label>
+            Respuesta motora
+            <select [(ngModel)]="triaje.glasgowMotora">
+              <option [ngValue]="null">Seleccione</option>
+              <option [ngValue]="6">Obedece órdenes</option>
+              <option [ngValue]="5">Localiza dolor</option>
+              <option [ngValue]="4">Retira al dolor</option>
+              <option [ngValue]="3">Flexión anormal</option>
+              <option [ngValue]="2">Extensión anormal</option>
+              <option [ngValue]="1">Ninguna</option>
+            </select>
+          </label>
+
+          <div class="calc-card glasgow-card">
+            <span>Glasgow total</span>
+            <strong>{{ calcularGlasgow() ?? 'No calculado' }}</strong>
+            <small>Automático</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Perfusión y pupilas</h4>
+
+        <div class="grid-2">
+          <label>
+            Llenado capilar
+            <select [(ngModel)]="triaje.llenadoCapilar">
+              <option [ngValue]="null">No evaluado</option>
+              <option>Menor a 2 segundos</option>
+              <option>Mayor a 2 segundos</option>
+              <option>Mayor a 3 segundos</option>
+              <option>No valorable</option>
+            </select>
+          </label>
+
+          <label>
+            Pupilas
+            <select [(ngModel)]="triaje.pupilas">
+              <option [ngValue]="null">No evaluadas</option>
+              <option>Isocóricas y reactivas</option>
+              <option>Isocóricas hiporreactivas</option>
+              <option>Anisocóricas</option>
+              <option>Mióticas</option>
+              <option>Midriáticas</option>
+              <option>No reactivas</option>
+              <option>No valorables</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Antropometría</h4>
+
+        <div class="grid-3">
+          <label>
+            Peso
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder="Kilogramos"
+              [(ngModel)]="triaje.peso">
+          </label>
+
+          <label>
+            Talla
+            <input
+              type="number"
+              min="30"
+              max="250"
+              placeholder="Centímetros"
+              [(ngModel)]="triaje.talla">
+          </label>
+
+          <div class="calc-card">
+            <span>Índice de masa corporal</span>
+            <strong>{{ calcularIndiceMasaCorporal() ?? 'No calculado' }}</strong>
+            <small>Automático</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Alertas adicionales</h4>
+
+        <div class="checkbox-grid">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="triaje.oxigenoSuplementario">
+            <span>Recibe oxígeno suplementario</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="triaje.alergiaConocida">
+            <span>Alergia conocida</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="triaje.riesgoCaida">
+            <span>Riesgo de caída</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="triaje.aislamiento">
+            <span>Requiere aislamiento</span>
+          </label>
+        </div>
+
+        <div class="grid-3 conditional-grid">
+          <label *ngIf="triaje.oxigenoSuplementario">
+            Flujo de oxígeno
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              placeholder="Litros por minuto"
+              [(ngModel)]="triaje.flujoOxigeno">
+          </label>
+
+          <label *ngIf="triaje.alergiaConocida">
+            Especifique alergia
+            <input
+              type="text"
+              placeholder="Medicamento, alimento u otro"
+              [(ngModel)]="triaje.alergiaDescripcion">
+          </label>
+
+          <label *ngIf="triaje.aislamiento">
+            Tipo de aislamiento
+            <select [(ngModel)]="triaje.tipoAislamiento">
+              <option [ngValue]="null">Seleccione</option>
+              <option>Contacto</option>
+              <option>Gotas</option>
+              <option>Aéreo</option>
+              <option>Protector</option>
+              <option>Otro</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+    </section>
+
+    <aside class="right-panel">
+
+      <div class="alert-box">
+        <div class="panel-title danger-title">
+          <span>
+            <i class="bx bx-error-circle"></i>
+          </span>
+          <h3>Señales de alarma</h3>
+        </div>
+
+        <p>
+          <span>Presión arterial</span>
+          <strong [ngClass]="obtenerClaseAlerta(obtenerEstadoPresionArterial())">
+            {{ obtenerEstadoPresionArterial() }}
+          </strong>
+        </p>
+
+        <p>
+          <span>Frecuencia cardíaca</span>
+          <strong [ngClass]="obtenerClaseAlerta(obtenerEstadoFrecuenciaCardiaca())">
+            {{ obtenerEstadoFrecuenciaCardiaca() }}
+          </strong>
+        </p>
+
+        <p>
+          <span>Frecuencia respiratoria</span>
+          <strong [ngClass]="obtenerClaseAlerta(obtenerEstadoFrecuenciaRespiratoria())">
+            {{ obtenerEstadoFrecuenciaRespiratoria() }}
+          </strong>
+        </p>
+
+        <p>
+          <span>Temperatura</span>
+          <strong [ngClass]="obtenerClaseAlerta(obtenerEstadoTemperatura())">
+            {{ obtenerEstadoTemperatura() }}
+          </strong>
+        </p>
+
+        <p>
+          <span>Saturación</span>
+          <strong [ngClass]="obtenerClaseAlerta(obtenerEstadoSaturacion())">
+            {{ obtenerEstadoSaturacion() }}
+          </strong>
+        </p>
+
+        <p>
+          <span>Glasgow</span>
+          <strong [ngClass]="obtenerClaseAlerta(obtenerEstadoGlasgow())">
+            {{ obtenerEstadoGlasgow() }}
+          </strong>
+        </p>
+      </div>
+
+      <div class="risk-box">
+        <div class="panel-title success-title">
+          <span>
+            <i class="bx bx-check-circle"></i>
+          </span>
+          <h3>Resumen de prioridad clínica</h3>
+        </div>
+
+        <p>
+          <span>Paciente con prioridad</span>
+          <strong>{{ triaje.prioridad || 'No definida' }}</strong>
+        </p>
+
+        <p *ngIf="triaje.discriminadorClinico">
+          <span>Discriminador</span>
+          <strong>
+            {{ triaje.discriminadorClinico === 'Otro' ? triaje.discriminadorClinicoOtro : triaje.discriminadorClinico }}
+          </strong>
+        </p>
+
+        <strong class="risk-result" [ngClass]="obtenerClaseRiesgoPrioridad()">
+          {{ obtenerResumenRiesgo() }}
+        </strong>
+      </div>
+
+      <div class="risk-box blue">
+        <div class="panel-title blue-title">
+          <span>
+            <i class="bx bx-info-circle"></i>
+          </span>
+          <h3>Datos calculados</h3>
+        </div>
+
+        <p>
+          <span>Presión arterial media</span>
+          <strong>{{ calcularPresionArterialMedia() ?? 'No calculada' }}</strong>
+        </p>
+
+        <p>
+          <span>Presión de pulso</span>
+          <strong>{{ calcularPresionPulso() ?? 'No calculada' }}</strong>
+        </p>
+
+        <p>
+          <span>Glasgow</span>
+          <strong>{{ calcularGlasgow() ?? 'No calculado' }}</strong>
+        </p>
+
+        <p>
+          <span>Índice de masa corporal</span>
+          <strong>{{ calcularIndiceMasaCorporal() ?? 'No calculado' }}</strong>
+        </p>
+      </div>
+
+    </aside>
+
+  </section>
+
+</section>
+
+<ng-template #sinAtencion>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bx-plus-medical"></i>
+      </div>
+
+      <h2>Primero active una atención</h2>
+
+      <p>
+        Para registrar triaje, el sistema necesita una atención abierta.
+        Puede crear una atención desde Pacientes o abrir una atención existente desde Inicio.
+      </p>
+
+      <div class="empty-care-actions">
+        <button class="empty-action-button" type="button" (click)="irA('pacientes')">
+          <strong>
+            <i class="bx bxs-user-account"></i>
+            Ir a Pacientes
+          </strong>
+          <span>Busque o registre un paciente y cree una atención.</span>
+        </button>
+
+        <button class="empty-action-button" type="button" (click)="irA('inicio')">
+          <strong>
+            <i class="bx bx-home"></i>
+            Ir a Inicio
+          </strong>
+          <span>Abra una atención activa ya registrada.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</ng-template>

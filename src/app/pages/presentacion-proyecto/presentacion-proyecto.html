@@ -1,0 +1,82 @@
+<div class="landing-shell">
+  <header class="landing-header">
+    <a class="brand" href="#inicio" aria-label="HCU 008 Emergencia, inicio">
+      <img src="assets/branding/logo-hcu008.png" alt="">
+      <span><strong>HCU 008</strong><small>Emergencia</small></span>
+    </a>
+    <nav aria-label="Contenido del proyecto">
+      <a href="#problematica">Problemática</a>
+      <a href="#alcance">Alcance</a>
+      <a href="#flujo">Flujo</a>
+    </nav>
+    <button class="nav-access" type="button" (click)="abrirSistema.emit()">Ingresar</button>
+  </header>
+
+  <main id="inicio">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><i class="bx bx-plus-medical"></i> Proyecto de transformación clínica</span>
+        <h1>La emergencia hospitalaria, organizada de principio a fin.</h1>
+        <p>Una aplicación web para digitalizar el Formulario 008, priorizar pacientes y mantener cada decisión clínica dentro de un solo flujo seguro.</p>
+        <div class="hero-actions">
+          <button class="primary-action" type="button" (click)="abrirSistema.emit()">Abrir sistema <i class="bx bx-right-arrow-alt"></i></button>
+          <button class="install-action" type="button" (click)="instalar.emit()"><i class="bx bx-download"></i> Instalar HCU 008</button>
+        </div>
+        <div class="trust-row" aria-label="Características principales">
+          <span><i class="bx bx-check-circle"></i> Flujo completo</span>
+          <span><i class="bx bx-check-circle"></i> Roles seguros</span>
+          <span><i class="bx bx-check-circle"></i> Reporte clínico</span>
+        </div>
+      </div>
+      <div class="hero-visual" aria-label="Vista conceptual de HCU 008">
+        <div class="visual-label">Centro de control clínico</div>
+        <img src="assets/login/medico-dashboard.png" alt="Personal hospitalario utilizando un sistema digital de emergencia">
+        <div class="status-card status-critical"><i class="bx bx-pulse"></i><span><small>Prioridad</small><strong>Respuesta inmediata</strong></span></div>
+        <div class="status-card status-report"><i class="bx bx-file"></i><span><small>Resultado</small><strong>Historia consolidada</strong></span></div>
+      </div>
+    </section>
+
+    <section class="problem-section" id="problematica">
+      <div class="section-heading"><span>01 · PROBLEMÁTICA</span><h2>Cuando la información está fragmentada, la atención pierde continuidad.</h2></div>
+      <div class="problem-grid">
+        <p class="lead">En emergencia, los registros manuales o separados generan pacientes duplicados, atenciones repetidas, demoras para encontrar datos y poca claridad sobre el estado real de cada caso.</p>
+        <div class="problem-list">
+          <article><b>01</b><span><strong>Información dispersa</strong><small>Datos clínicos repartidos entre formularios y módulos sin continuidad.</small></span></article>
+          <article><b>02</b><span><strong>Priorización difícil</strong><small>Sin un tablero central es más lento identificar pacientes críticos o sin triaje.</small></span></article>
+          <article><b>03</b><span><strong>Permisos insuficientes</strong><small>La falta de roles aumenta el riesgo de cambios o eliminaciones inadecuadas.</small></span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="solution-band">
+      <span>LA RESPUESTA</span>
+      <h2>Un expediente digital que acompaña al paciente durante toda la emergencia.</h2>
+      <p>HCU 008 conecta el registro, la valoración y el egreso para que el equipo médico trabaje con información ordenada, trazable y disponible.</p>
+    </section>
+
+    <section class="scope-section" id="alcance">
+      <div class="section-heading"><span>02 · ALCANCE</span><h2>Funciones creadas para el trabajo real del servicio.</h2><p>El proyecto cubre la operación clínica y el control administrativo sin perder claridad.</p></div>
+      <div class="scope-grid">
+        <article *ngFor="let item of alcances"><i class="bx" [ngClass]="item.icono"></i><h3>{{ item.titulo }}</h3><p>{{ item.texto }}</p></article>
+      </div>
+    </section>
+
+    <section class="roles-section">
+      <div class="role-intro"><span>03 · ROLES</span><h2>Cada usuario accede a lo que necesita.</h2><p>Los permisos mantienen el trabajo clínico ágil y reservan las acciones administrativas sensibles.</p></div>
+      <article class="role-card doctor"><div class="role-icon"><i class="bx bx-plus-medical"></i></div><span>ROL CLÍNICO</span><h3>Doctor</h3><ul><li>Registra pacientes y atenciones</li><li>Completa el flujo médico</li><li>Consulta historial y reportes</li></ul></article>
+      <article class="role-card admin"><div class="role-icon"><i class="bx bx-shield-quarter"></i></div><span>ROL DE CONTROL</span><h3>Administrador</h3><ul><li>Incluye todas las funciones clínicas</li><li>Administra usuarios y catálogos</li><li>Corrige registros creados por error</li></ul></article>
+    </section>
+
+    <section class="flow-section" id="flujo">
+      <div class="section-heading"><span>04 · FLUJO ASISTENCIAL</span><h2>Diez etapas, una sola historia.</h2></div>
+      <ol class="flow-list"><li *ngFor="let paso of flujo; index as i"><b>{{ (i + 1).toString().padStart(2, '0') }}</b><span>{{ paso }}</span></li></ol>
+    </section>
+
+    <section class="final-cta">
+      <div><span>HCU 008 EMERGENCIA</span><h2>Listo para registrar una atención más ordenada.</h2><p>Accede al sistema desde el navegador o instálalo como aplicación en este equipo.</p></div>
+      <div><button class="primary-action light" type="button" (click)="abrirSistema.emit()">Abrir sistema</button><button class="install-action dark" type="button" (click)="instalar.emit()"><i class="bx bx-download"></i> Instalar aplicación</button></div>
+    </section>
+  </main>
+
+  <footer><div class="brand"><img src="assets/branding/logo-hcu008.png" alt=""><span><strong>HCU 008</strong><small>Emergencia</small></span></div><p>Sistema web para la gestión digital del Formulario 008 de Emergencia.</p><small>Proyecto académico · 2026</small></footer>
+</div>

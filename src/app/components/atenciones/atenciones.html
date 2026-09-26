@@ -1,0 +1,302 @@
+<section class="attention-module" *ngIf="pacienteActual; else sinPaciente">
+
+  <div class="attention-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <i class="bx bx-plus-medical"></i>
+      </div>
+
+      <div>
+        <h2>2. Atenciones</h2>
+        <p>Ingreso de emergencia, motivo de consulta y condición de llegada</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="secondary-button" (click)="irA('inicio')">
+        <i class="bx bx-home"></i>
+        Inicio
+      </button>
+
+      <button type="button" class="secondary-button" (click)="irA('pacientes')">
+        <i class="bx bxs-user-account"></i>
+        Pacientes
+      </button>
+
+      <button
+        type="button"
+        class="primary-button"
+        (click)="cargarAtencionesPaciente()"
+        [disabled]="cargandoAtenciones">
+        <i class="bx bx-refresh"></i>
+        {{ cargandoAtenciones ? 'Recargando...' : 'Recargar' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="patient-summary">
+    <div class="summary-icon">
+      <i class="bx bxs-user"></i>
+    </div>
+
+    <div class="summary-data">
+      <span>Paciente seleccionado</span>
+      <strong>{{ obtenerNombrePaciente() }}</strong>
+      <p>
+        {{ obtenerEdadPaciente() }}
+        <span>•</span>
+        Cédula: {{ obtenerCedulaPaciente() }}
+        <span>•</span>
+        {{ pacienteActual.sexo || 'Sexo no registrado' }}
+      </p>
+    </div>
+  </div>
+
+  <div class="attention-layout">
+
+    <section class="form-card">
+
+      <div class="form-title">
+        <div>
+          <h3>
+            <i
+              class="bx"
+              [class.bx-edit]="modoEdicion"
+              [class.bx-plus-medical]="!modoEdicion">
+            </i>
+            {{ modoEdicion ? 'Editar atención' : 'Nueva atención' }}
+          </h3>
+
+          <p>
+            {{ modoEdicion ? 'Actualice los datos administrativos del ingreso.' : 'Registre una nueva atención de emergencia.' }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="clear-button"
+          (click)="limpiarFormulario()"
+          [disabled]="guardando">
+          <i class="bx bx-eraser"></i>
+          Limpiar
+        </button>
+      </div>
+
+      <div class="helper-card" *ngIf="cargandoCatalogos">
+        <strong>Cargando catálogos</strong>
+        <span>Obteniendo motivos, procedencias y condiciones desde la base.</span>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Motivo de consulta
+          <select [(ngModel)]="formulario.motivoConsulta">
+            <option value="">Seleccione</option>
+            <option *ngFor="let motivo of motivosConsulta" [ngValue]="motivo">
+              {{ motivo }}
+            </option>
+          </select>
+        </label>
+
+        <label *ngIf="formulario.motivoConsulta === 'Otro'">
+          Especifique motivo
+          <input
+            type="text"
+            maxlength="160"
+            placeholder="Detalle el motivo de consulta"
+            [(ngModel)]="formulario.motivoConsultaOtro">
+        </label>
+
+        <label>
+          Procedencia
+          <select [(ngModel)]="formulario.procedencia">
+            <option value="">Seleccione</option>
+            <option *ngFor="let procedencia of procedencias" [ngValue]="procedencia">
+              {{ procedencia }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Condición de llegada
+          <select [(ngModel)]="formulario.condicionLlegada">
+            <option value="">Seleccione</option>
+            <option *ngFor="let condicion of condicionesLlegada" [ngValue]="condicion">
+              {{ condicion }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <label>
+        Enfermedad actual breve
+        <textarea
+          rows="4"
+          maxlength="1000"
+          placeholder="Describa de forma breve el cuadro clínico actual."
+          [(ngModel)]="formulario.enfermedadActualBreve">
+        </textarea>
+      </label>
+
+      <div class="check-card" [class.checked]="formulario.tieneAcompanante">
+        <label>
+          <input type="checkbox" [(ngModel)]="formulario.tieneAcompanante">
+          <span>Paciente acude con acompañante</span>
+        </label>
+      </div>
+
+      <div class="form-grid" *ngIf="formulario.tieneAcompanante">
+        <label>
+          Nombre del acompañante
+          <input
+            type="text"
+            maxlength="160"
+            placeholder="Nombre completo"
+            [(ngModel)]="formulario.nombreAcompanante">
+        </label>
+
+        <label>
+          Parentesco
+          <select [(ngModel)]="formulario.parentescoAcompanante">
+            <option value="">Seleccione</option>
+            <option *ngFor="let parentesco of parentescos" [ngValue]="parentesco">
+              {{ parentesco }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Teléfono
+          <input
+            type="text"
+            maxlength="10"
+            placeholder="0999999999"
+            [(ngModel)]="formulario.telefonoAcompanante">
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="save-button"
+          (click)="guardarAtencion()"
+          [disabled]="guardando">
+          <i class="bx bx-save"></i>
+          {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar atención' : 'Crear atención') }}
+        </button>
+
+        <button
+          type="button"
+          class="cancel-button"
+          *ngIf="modoEdicion"
+          (click)="cancelarEdicion()"
+          [disabled]="guardando">
+          <i class="bx bx-x"></i>
+          Cancelar edición
+        </button>
+      </div>
+
+    </section>
+
+    <section class="list-card">
+
+      <div class="list-header">
+        <div>
+          <h3>
+            <i class="bx bx-list-ul"></i>
+            Atenciones del paciente
+          </h3>
+          <p>{{ atencionesPaciente.length }} atención(es) activa(s) o recientes</p>
+        </div>
+
+        <span class="admin-pill" *ngIf="esAdministrador()">
+          Admin: puede eliminar
+        </span>
+      </div>
+
+      <div class="loading-card" *ngIf="cargandoAtenciones">
+        Cargando atenciones...
+      </div>
+
+      <div class="empty-card" *ngIf="!cargandoAtenciones && atencionesPaciente.length === 0">
+        <i class="bx bx-folder-open"></i>
+        <strong>No hay atenciones registradas para este paciente</strong>
+        <span>Cree una atención para iniciar el flujo clínico.</span>
+      </div>
+
+      <div
+        class="attention-item"
+        *ngFor="let atencion of atencionesPaciente; trackBy: trackByAtencion">
+
+        <div class="item-main">
+          <div class="item-icon">
+            <i class="bx bx-plus-medical"></i>
+          </div>
+
+          <div class="item-text">
+            <strong>AT-{{ atencion.id }}</strong>
+            <p>{{ atencion.motivoConsulta || 'Sin motivo registrado' }}</p>
+            <small>{{ formatearFecha(atencion.fechaIngreso) }}</small>
+          </div>
+        </div>
+
+        <div class="item-status">
+          {{ obtenerEstadoTexto(atencion.estado) }}
+        </div>
+
+        <div class="action-row">
+          <button
+            type="button"
+            class="continue-button"
+            (click)="continuarAtencion(atencion)">
+            Continuar
+          </button>
+
+          <button
+            type="button"
+            class="edit-button"
+            *ngIf="puedeEditarAtencion(atencion)"
+            title="Editar atención"
+            (click)="editarAtencion(atencion)">
+            <i class="bx bx-edit"></i>
+          </button>
+
+          <button
+            type="button"
+            class="delete-button"
+            *ngIf="puedeEliminarAtencion(atencion)"
+            [disabled]="eliminandoId === atencion.id"
+            title="Eliminar atención"
+            (click)="eliminarAtencion(atencion)">
+            <i class="bx bx-trash"></i>
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+</section>
+
+<ng-template #sinPaciente>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bxs-user-account"></i>
+      </div>
+
+      <h2>Primero seleccione un paciente</h2>
+
+      <p>
+        Para crear una atención de emergencia, primero debe buscar o registrar un paciente.
+      </p>
+
+      <button type="button" class="primary-button" (click)="irA('pacientes')">
+        <i class="bx bxs-user-account"></i>
+        Ir a Pacientes
+      </button>
+    </div>
+  </section>
+</ng-template>

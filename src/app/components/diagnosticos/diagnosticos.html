@@ -1,0 +1,310 @@
+<p class="readonly-notice" role="status" *ngIf="soloLectura">Atención cerrada: solo consulta.</p>
+<section class="diagnosis-module" *ngIf="atencionActual; else sinAtencion">
+
+  <div class="diagnosis-header-card">
+    <div class="header-left">
+      <div class="header-logo">
+        <i class="bx bx-list-check"></i>
+      </div>
+
+      <div>
+        <h2>3. Diagnósticos</h2>
+        <p>Registro diagnóstico CIE-10 de la atención de emergencia</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="continue-button" type="button" (click)="irA('mensajeria')" [disabled]="diagnosticos.length === 0">
+        <i class="bx bx-send"></i> Enviar información
+      </button>
+      <button class="continue-button" type="button" (click)="continuarPrescripciones()" [disabled]="!puedeContinuarPrescripciones()">
+        Continuar a prescripciones <i class="bx bx-right-arrow-alt"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span>Paciente</span>
+      <strong>{{ obtenerNombrePaciente() }}</strong>
+      <small>Cédula: {{ obtenerCedulaPaciente() }}</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Motivo de consulta</span>
+      <strong>{{ obtenerMotivoConsulta() }}</strong>
+      <small>Dato tomado del ingreso</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Total diagnósticos</span>
+      <strong>{{ obtenerTotalDiagnosticos() }}</strong>
+      <small>Registrados en esta atención</small>
+    </div>
+
+    <div class="summary-card" [class.card-warning]="obtenerTotalPrincipales() === 0">
+      <span>Diagnóstico principal</span>
+      <strong>{{ obtenerTotalPrincipales() }}</strong>
+      <small>{{ obtenerTotalPrincipales() === 0 ? 'Pendiente obligatorio' : 'Registrado' }}</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Definitivos</span>
+      <strong>{{ obtenerTotalDefinitivos() }}</strong>
+      <small>Confirmados clínicamente</small>
+    </div>
+  </div>
+
+  <div class="clinical-notice" *ngIf="obtenerTotalPrincipales() === 0">
+    <div>
+      <i class="bx bx-error-circle"></i>
+    </div>
+
+    <p>
+      Registre al menos un diagnóstico <strong>Principal</strong> para continuar el flujo clínico.
+      Puede iniciar con un diagnóstico presuntivo y actualizarlo luego.
+    </p>
+  </div>
+
+  <div class="frequent-card">
+    <div class="frequent-header">
+      <h4>Diagnósticos frecuentes</h4>
+      <p>Seleccione una opción rápida o escriba manualmente el CIE-10.</p>
+    </div>
+
+    <div class="frequent-grid">
+      <button
+        type="button"
+        *ngFor="let item of diagnosticosFrecuentes; trackBy: trackByDiagnosticoFrecuente"
+        [ngClass]="item.clase"
+        (click)="seleccionarDiagnosticoFrecuente(item)">
+        <strong>{{ item.codigo }}</strong>
+        <span>{{ item.descripcion }}</span>
+        <small>{{ item.grupo }}</small>
+      </button>
+    </div>
+  </div>
+
+  <div class="diagnosis-layout">
+
+    <section class="form-panel">
+
+      <div class="form-card">
+        <div class="form-title">
+          <div>
+            <h4>{{ formulario.id ? 'Editar diagnóstico' : 'Nuevo diagnóstico' }}</h4>
+            <p>{{ formulario.id ? 'Modifique el diagnóstico seleccionado.' : 'Ingrese código, descripción, tipo y condición.' }}</p>
+          </div>
+
+          <span class="edit-pill" *ngIf="formulario.id">
+            En edición
+          </span>
+        </div>
+
+        <div class="helper-card" *ngIf="cargandoCatalogos">
+          <strong>Cargando catálogos</strong>
+          <span>Obteniendo tipo y condición diagnóstica desde la base de datos.</span>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Código CIE-10
+            <input
+              type="text"
+              maxlength="15"
+              placeholder="Ejemplo: R10.0"
+              [(ngModel)]="formulario.codigoCie10">
+          </label>
+
+          <label>
+            Tipo
+            <select [(ngModel)]="formulario.tipoDiagnostico">
+              <option *ngFor="let tipo of tiposDiagnostico" [ngValue]="tipo">
+                {{ tipo }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Condición
+            <select [(ngModel)]="formulario.condicion">
+              <option *ngFor="let condicion of condicionesDiagnostico" [ngValue]="condicion">
+                {{ condicion }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Descripción CIE-10
+          <input
+            type="text"
+            maxlength="300"
+            placeholder="Descripción del diagnóstico"
+            [(ngModel)]="formulario.descripcionCie10">
+        </label>
+
+        <label>
+          Observación clínica
+          <textarea
+            rows="5"
+            placeholder="Agregue datos clínicos relevantes, justificación o contexto diagnóstico."
+            [(ngModel)]="formulario.observacion">
+          </textarea>
+        </label>
+
+        <div class="helper-card">
+          <strong>Regla rápida</strong>
+          <span>
+            Una atención debe tener un solo diagnóstico principal. Los demás deben registrarse como secundarios.
+          </span>
+        </div>
+
+        <div class="template-save-row">
+          <label>
+            Nombre de la plantilla
+            <input type="text" maxlength="60" placeholder="Ejemplo: Dolor abdominal" [(ngModel)]="nombreNuevaPlantilla" [disabled]="soloLectura">
+          </label>
+          <small>Complete el diagnóstico y guárdelo como opción rápida para este equipo.</small>
+        </div>
+
+        <div class="form-actions">
+          <button class="clear-button" type="button" (click)="crearPlantillaPersonalizada()" [disabled]="soloLectura || guardandoDiagnostico"><i class="bx bx-bookmark-plus"></i> Crear plantilla</button>
+          <button
+            class="save-button"
+            type="button"
+            (click)="guardarDiagnostico()"
+            [disabled]="soloLectura || (guardandoDiagnostico)">
+            <i class="bx bx-save"></i>
+            {{ guardandoDiagnostico ? 'Guardando...' : (formulario.id ? 'Actualizar diagnóstico' : 'Guardar diagnóstico') }}
+          </button>
+
+          <button
+            class="clear-button"
+            type="button"
+            (click)="cancelarEdicion()"
+            [disabled]="guardandoDiagnostico">
+            <i class="bx bx-eraser"></i>
+            {{ formulario.id ? 'Cancelar edición' : 'Limpiar' }}
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <aside class="list-panel">
+
+      <div class="list-card">
+        <div class="list-header">
+          <div>
+            <h4>Diagnósticos registrados</h4>
+            <p>Lista de diagnósticos de esta atención.</p>
+          </div>
+
+          <span>{{ diagnosticos.length }}</span>
+        </div>
+
+        <div class="empty-state" *ngIf="diagnosticos.length === 0 && !cargandoDiagnosticos">
+          <div>
+            <i class="bx bx-list-check"></i>
+          </div>
+
+          <strong>Sin diagnósticos registrados</strong>
+          <p>Agregue al menos un diagnóstico principal para continuar el flujo clínico.</p>
+        </div>
+
+        <div class="loading-state" *ngIf="cargandoDiagnosticos">
+          Cargando diagnósticos...
+        </div>
+
+        <div
+          class="diagnosis-item"
+          *ngFor="let diagnostico of diagnosticos; trackBy: trackByDiagnostico"
+          [class.main-diagnosis]="diagnostico.condicion === 'Principal'">
+
+          <div class="diagnosis-main">
+            <div class="diagnosis-code">
+              {{ diagnostico.codigoCie10 }}
+            </div>
+
+            <div>
+              <strong>{{ diagnostico.descripcionCie10 }}</strong>
+
+              <div class="badges">
+                <span [ngClass]="obtenerClaseTipo(diagnostico.tipoDiagnostico)">
+                  {{ diagnostico.tipoDiagnostico }}
+                </span>
+
+                <span [ngClass]="obtenerClaseCondicion(diagnostico.condicion)">
+                  {{ diagnostico.condicion }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p *ngIf="diagnostico.observacion">
+            {{ diagnostico.observacion }}
+          </p>
+
+          <small>
+            {{ formatearFecha(diagnostico.fechaRegistro) }}
+          </small>
+
+          <div class="item-actions">
+            <button [disabled]="soloLectura" type="button" (click)="editarDiagnostico(diagnostico)">
+              <i class="bx bx-edit"></i>
+              Editar
+            </button>
+
+            <button [disabled]="soloLectura" *ngIf="auth.esAdmin()"
+              type="button"
+              class="danger-button"
+              (click)="eliminarDiagnostico(diagnostico)">
+              <i class="bx bx-trash"></i>
+              Eliminar
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+</section>
+
+<ng-template #sinAtencion>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bx-list-check"></i>
+      </div>
+
+      <h2>Primero active una atención</h2>
+
+      <p>
+        Para registrar diagnósticos, primero debe abrir una atención activa.
+        Puede crearla desde Pacientes o abrir una atención existente desde Inicio.
+      </p>
+
+      <div class="empty-care-actions">
+        <button class="empty-action-button" type="button" (click)="irA('pacientes')">
+          <strong>
+            <i class="bx bxs-user-account"></i>
+            Ir a Pacientes
+          </strong>
+          <span>Busque o registre un paciente y cree una atención.</span>
+        </button>
+
+        <button class="empty-action-button" type="button" (click)="irA('inicio')">
+          <strong>
+            <i class="bx bx-home"></i>
+            Ir a Inicio
+          </strong>
+          <span>Abra una atención activa ya registrada.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</ng-template>

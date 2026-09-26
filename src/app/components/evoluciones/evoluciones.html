@@ -1,0 +1,362 @@
+<p class="readonly-notice" role="status" *ngIf="soloLectura">Atención cerrada: solo consulta.</p>
+<section class="evolution-module" *ngIf="atencionActual; else sinAtencion">
+
+  <div class="evolution-header-card">
+    <div class="header-left">
+      <div class="header-logo">
+        <i class="bx bx-notepad"></i>
+      </div>
+
+      <div>
+        <h2>6. Evoluciones</h2>
+        <p>Registro de evolución clínica, respuesta al tratamiento y conducta</p>
+      </div>
+    </div>
+
+    <button class="continue-button" type="button" (click)="continuarEgreso()">
+      Continuar a egreso
+      <i class="bx bx-right-arrow-alt"></i>
+    </button>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span>Paciente</span>
+      <strong>{{ obtenerNombrePaciente() }}</strong>
+      <small>Cédula: {{ obtenerCedulaPaciente() }}</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Motivo de consulta</span>
+      <strong>{{ obtenerMotivoConsulta() }}</strong>
+      <small>Dato tomado del ingreso</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Total evoluciones</span>
+      <strong>{{ obtenerTotalEvoluciones() }}</strong>
+      <small>Registradas en esta atención</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Críticas</span>
+      <strong>{{ obtenerTotalCriticas() }}</strong>
+      <small>Alertas clínicas</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Reevaluación</span>
+      <strong>{{ obtenerTotalReevaluacion() }}</strong>
+      <small>Pendientes de control</small>
+    </div>
+  </div>
+
+  <div class="template-card">
+    <div class="template-header">
+      <div>
+        <h4>Plantillas rápidas</h4>
+        <p>Seleccione una plantilla o digite una evolución manual.</p>
+      </div>
+    </div>
+
+    <div class="template-grid">
+      <button
+        type="button"
+        *ngFor="let plantilla of plantillas; trackBy: trackByPlantilla"
+        [ngClass]="plantilla.clase"
+        (click)="aplicarPlantilla(plantilla)">
+        <strong>{{ plantilla.titulo }}</strong>
+        <span>{{ plantilla.detalle }}</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="evolution-layout">
+
+    <section class="form-panel">
+      <div class="form-card">
+
+        <div class="form-title">
+          <div>
+            <h4>{{ formulario.id ? 'Editar evolución' : 'Nueva evolución' }}</h4>
+            <p>Registre condición clínica, análisis y conducta médica.</p>
+          </div>
+
+          <span class="edit-pill" *ngIf="formulario.id">En edición</span>
+        </div>
+
+        <div class="helper-card" *ngIf="cargandoCatalogos">
+          <strong>Cargando catálogos</strong>
+          <span>Obteniendo tipos de evolución y condición del paciente desde la base de datos.</span>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Tipo de evolución
+            <select [(ngModel)]="formulario.tipoEvolucion">
+              <option *ngFor="let tipo of tiposEvolucion" [ngValue]="tipo">
+                {{ tipo }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Condición del paciente
+            <select [(ngModel)]="formulario.condicionPaciente">
+              <option *ngFor="let condicion of condicionesPaciente" [ngValue]="condicion">
+                {{ condicion }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Signos vitales resumen
+            <input
+              type="text"
+              maxlength="300"
+              placeholder="TA, FC, FR, SatO₂, temperatura..."
+              [(ngModel)]="formulario.signosVitalesResumen">
+          </label>
+        </div>
+
+        <label>
+          Subjetivo
+          <textarea
+            rows="3"
+            maxlength="800"
+            placeholder="Síntomas referidos por el paciente o familiar."
+            [(ngModel)]="formulario.subjetivo">
+          </textarea>
+        </label>
+
+        <label>
+          Objetivo
+          <textarea
+            rows="4"
+            maxlength="1000"
+            placeholder="Estado actual, examen físico, signos vitales, hallazgos clínicos."
+            [(ngModel)]="formulario.objetivo">
+          </textarea>
+        </label>
+
+        <label>
+          Análisis
+          <textarea
+            rows="4"
+            maxlength="1000"
+            placeholder="Interpretación clínica de la evolución y respuesta al tratamiento."
+            [(ngModel)]="formulario.analisis">
+          </textarea>
+        </label>
+
+        <label>
+          Plan / conducta
+          <textarea
+            rows="4"
+            maxlength="1000"
+            placeholder="Conducta médica, cambios de tratamiento, reevaluación, interconsulta o egreso."
+            [(ngModel)]="formulario.plan">
+          </textarea>
+        </label>
+
+        <label>
+          Respuesta al tratamiento
+          <textarea
+            rows="3"
+            maxlength="800"
+            placeholder="Mejoría, sin cambios, deterioro, efectos adversos o pendiente de reevaluación."
+            [(ngModel)]="formulario.respuestaTratamiento">
+          </textarea>
+        </label>
+
+        <div class="flag-grid">
+          <label class="check-card" [class.checked]="formulario.requiereReevaluacion">
+            <input type="checkbox" [(ngModel)]="formulario.requiereReevaluacion">
+            <span>Requiere reevaluación</span>
+          </label>
+
+          <label class="check-card urgent" [class.checked]="formulario.esCritica">
+            <input type="checkbox" [(ngModel)]="formulario.esCritica">
+            <span>Evolución crítica</span>
+          </label>
+        </div>
+
+        <div class="helper-card">
+          <strong>Regla rápida</strong>
+          <span>Una evolución debe incluir objetivo, análisis y plan. Evite guardar notas vacías.</span>
+        </div>
+
+        <div class="template-save-row">
+          <label>
+            Nombre de la plantilla
+            <input type="text" maxlength="60" placeholder="Ejemplo: Reevaluación favorable" [(ngModel)]="nombreNuevaPlantilla" [disabled]="soloLectura">
+          </label>
+          <small>Complete la evolución y guárdela como opción rápida para este equipo.</small>
+        </div>
+
+        <div class="form-actions">
+          <button class="clear-button" type="button" (click)="crearPlantillaPersonalizada()" [disabled]="soloLectura || guardandoEvolucion"><i class="bx bx-bookmark-plus"></i> Crear plantilla</button>
+          <button
+            class="save-button"
+            type="button"
+            (click)="guardarEvolucion()"
+            [disabled]="soloLectura || (guardandoEvolucion)">
+            <i class="bx bx-save"></i>
+            {{ guardandoEvolucion ? 'Guardando...' : (formulario.id ? 'Actualizar evolución' : 'Guardar evolución') }}
+          </button>
+
+          <button
+            class="clear-button"
+            type="button"
+            (click)="limpiarFormularioEvolucion()"
+            [disabled]="guardandoEvolucion">
+            <i class="bx bx-eraser"></i>
+            Limpiar
+          </button>
+
+          <button
+            class="cancel-button"
+            type="button"
+            (click)="cancelarEdicion()"
+            [disabled]="guardandoEvolucion">
+            <i class="bx bx-x-circle"></i>
+            {{ formulario.id ? 'Cancelar edición' : 'Cancelar' }}
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <aside class="list-panel">
+      <div class="list-card">
+        <div class="list-header">
+          <div>
+            <h4>Evoluciones registradas</h4>
+            <p>Seguimiento clínico durante la atención.</p>
+          </div>
+
+          <span>{{ evoluciones.length }}</span>
+        </div>
+
+        <div class="empty-state" *ngIf="evoluciones.length === 0 && !cargandoEvoluciones">
+          <div>
+            <i class="bx bx-notepad"></i>
+          </div>
+          <strong>Sin evoluciones registradas</strong>
+          <p>Agregue una evolución o continúe a egreso si corresponde.</p>
+        </div>
+
+        <div class="loading-state" *ngIf="cargandoEvoluciones">
+          Cargando evoluciones...
+        </div>
+
+        <div
+          class="evolution-item"
+          *ngFor="let evolucion of evoluciones; trackBy: trackByEvolucion"
+          [ngClass]="obtenerClaseEvolucion(evolucion)">
+
+          <div class="evolution-main">
+            <div class="evolution-icon">
+              <i class="bx bx-notepad"></i>
+            </div>
+
+            <div>
+              <strong>{{ evolucion.tipoEvolucion }}</strong>
+              <small>{{ evolucion.condicionPaciente }} · {{ formatearFecha(evolucion.fechaRegistro) }}</small>
+
+              <div class="badges">
+                <span *ngIf="evolucion.requiereReevaluacion" class="badge-warning">
+                  Reevaluación
+                </span>
+
+                <span *ngIf="evolucion.esCritica" class="badge-urgent">
+                  Crítica
+                </span>
+
+                <span class="badge-state">
+                  {{ evolucion.estado || 'Activa' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p *ngIf="evolucion.signosVitalesResumen">
+            <strong>Signos vitales:</strong> {{ evolucion.signosVitalesResumen }}
+          </p>
+
+          <p *ngIf="evolucion.subjetivo">
+            <strong>Subjetivo:</strong> {{ evolucion.subjetivo }}
+          </p>
+
+          <p>
+            <strong>Objetivo:</strong> {{ evolucion.objetivo }}
+          </p>
+
+          <p>
+            <strong>Análisis:</strong> {{ evolucion.analisis }}
+          </p>
+
+          <p>
+            <strong>Plan:</strong> {{ evolucion.plan }}
+          </p>
+
+          <p *ngIf="evolucion.respuestaTratamiento">
+            <strong>Respuesta:</strong> {{ evolucion.respuestaTratamiento }}
+          </p>
+
+          <div class="item-actions">
+            <button [disabled]="soloLectura" type="button" (click)="editarEvolucion(evolucion)">
+              <i class="bx bx-edit"></i>
+              Editar
+            </button>
+
+            <button [disabled]="soloLectura"
+              type="button"
+              class="danger-button"
+              *ngIf="puedeEliminarEvolucion(evolucion)"
+              (click)="eliminarEvolucion(evolucion)">
+              <i class="bx bx-trash"></i>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</section>
+
+<ng-template #sinAtencion>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bx-notepad"></i>
+      </div>
+
+      <h2>Primero active una atención</h2>
+
+      <p>
+        Para registrar evoluciones, primero debe abrir una atención activa.
+        Puede crearla desde Pacientes o abrir una atención existente desde Inicio.
+      </p>
+
+      <div class="empty-care-actions">
+        <button class="empty-action-button" type="button" (click)="irA('pacientes')">
+          <strong>
+            <i class="bx bxs-user-account"></i>
+            Ir a Pacientes
+          </strong>
+          <span>Busque o registre un paciente y cree una atención.</span>
+        </button>
+
+        <button class="empty-action-button" type="button" (click)="irA('inicio')">
+          <strong>
+            <i class="bx bx-home"></i>
+            Ir a Inicio
+          </strong>
+          <span>Abra una atención activa ya registrada.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</ng-template>

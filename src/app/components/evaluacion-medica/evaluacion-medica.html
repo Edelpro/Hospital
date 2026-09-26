@@ -1,0 +1,507 @@
+<p class="readonly-notice" role="status" *ngIf="soloLectura">Atención cerrada: solo consulta.</p>
+<section class="medical-evaluation" *ngIf="atencionActual; else sinAtencion">
+
+  <div class="evaluation-header-card">
+    <div class="header-left">
+      <div class="header-logo">
+        <i class="bx bx-clipboard"></i>
+      </div>
+
+      <div>
+        <h2>2. Evaluación médica</h2>
+        <p>Valoración integral, examen físico y conducta inicial</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button
+        class="save-button"
+        type="button"
+        (click)="guardarEvaluacion()"
+        [disabled]="soloLectura || (guardandoEvaluacion)">
+        <i class="bx bx-save"></i>
+        {{ guardandoEvaluacion ? 'Guardando...' : 'Guardar y continuar a diagnósticos' }}
+      </button>
+
+      <button
+        class="clear-button"
+        type="button"
+        (click)="limpiarDatosEvaluacion()"
+        [disabled]="guardandoEvaluacion">
+        <i class="bx bx-eraser"></i>
+        Limpiar datos
+      </button>
+    </div>
+  </div>
+
+  <div class="patient-summary-card">
+    <div>
+      <span>Paciente</span>
+      <strong>{{ obtenerNombrePaciente() }}</strong>
+      <small>Cédula: {{ obtenerCedulaPaciente() }}</small>
+    </div>
+
+    <div>
+      <span>Motivo de consulta</span>
+      <strong>{{ obtenerMotivoConsulta() }}</strong>
+      <small>Dato tomado del ingreso</small>
+    </div>
+
+    <div>
+      <span>Prioridad de triaje</span>
+      <strong class="priority-pill" [ngClass]="obtenerClasePrioridad()">
+        {{ obtenerPrioridadTriaje() }}
+      </strong>
+      <small>Clasificación inicial</small>
+    </div>
+
+    <div>
+      <span>Signos vitales</span>
+      <strong class="vital-summary">{{ obtenerSignosVitalesResumen() }}</strong>
+      <small>Datos desde triaje</small>
+    </div>
+  </div>
+
+  <div class="quick-templates-card">
+    <div class="quick-templates-header">
+      <div>
+        <h4>Plantillas rápidas</h4>
+        <p>Puede aplicar una o varias. El texto se agrega sin borrar lo ya escrito.</p>
+      </div>
+    </div>
+
+    <div class="template-buttons">
+      <button
+        type="button"
+        class="template-button"
+        *ngFor="let plantilla of plantillasRapidas; trackBy: trackByPlantillaRapida"
+        [ngClass]="plantilla.clase"
+        (click)="aplicarPlantillaRapida(plantilla.id)">
+        <span class="template-icon">
+          <i [class]="plantilla.icono"></i>
+        </span>
+        <span class="template-text">
+          <strong>{{ plantilla.titulo }}</strong>
+          <small>{{ plantilla.detalle }}</small>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <div class="evaluation-layout">
+
+    <section class="main-panel">
+
+      <div class="main-grid">
+
+        <div class="form-section section-disease">
+          <h4>1. Enfermedad actual / valoración inicial</h4>
+
+          <textarea
+            rows="6"
+            placeholder="Describa cronología, síntomas principales, tiempo de evolución, factores asociados, tratamiento previo y estado actual."
+            [(ngModel)]="evaluacion.enfermedadActualAmpliada">
+          </textarea>
+        </div>
+
+        <div class="form-section section-fast">
+          <h4>2. Estado clínico rápido</h4>
+
+          <div class="helper-card" *ngIf="cargandoCatalogos">
+            <strong>Cargando catálogos</strong>
+            <span>Obteniendo opciones clínicas desde la base de datos.</span>
+          </div>
+
+          <div class="quick-grid">
+            <label>
+              Estado general
+              <select [(ngModel)]="evaluacion.estadoGeneral">
+                <option *ngFor="let opcion of estadosGenerales" [ngValue]="opcion">
+                  {{ opcion }}
+                </option>
+              </select>
+            </label>
+
+            <label>
+              Conciencia
+              <select [(ngModel)]="evaluacion.estadoConciencia">
+                <option *ngFor="let opcion of estadosConciencia" [ngValue]="opcion">
+                  {{ opcion }}
+                </option>
+              </select>
+            </label>
+
+            <label>
+              Hidratación
+              <select [(ngModel)]="evaluacion.hidratacion">
+                <option *ngFor="let opcion of opcionesHidratacion" [ngValue]="opcion">
+                  {{ opcion }}
+                </option>
+              </select>
+            </label>
+
+            <label>
+              Coloración
+              <select [(ngModel)]="evaluacion.coloracion">
+                <option *ngFor="let opcion of opcionesColoracion" [ngValue]="opcion">
+                  {{ opcion }}
+                </option>
+              </select>
+            </label>
+
+            <label>
+              Dolor actual
+              <select [(ngModel)]="evaluacion.dolorActual">
+                <option *ngFor="let opcion of opcionesDolor" [ngValue]="opcion">
+                  {{ opcion }}
+                </option>
+              </select>
+            </label>
+
+            <label>
+              Riesgo clínico
+              <select [(ngModel)]="evaluacion.riesgoClinico">
+                <option *ngFor="let opcion of opcionesRiesgoClinico" [ngValue]="opcion">
+                  {{ opcion }}
+                </option>
+              </select>
+            </label>
+
+            <label>
+              Conducta inicial
+              <select [(ngModel)]="evaluacion.conductaInicial">
+                <option *ngFor="let opcion of opcionesConductaInicial" [ngValue]="opcion">
+                  {{ opcion }}
+                </option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section section-alerts">
+          <h4>3. Alertas clínicas <small>(opcionales)</small></h4>
+          <p class="section-guidance">Marque únicamente las alertas presentes. Puede dejar todas sin marcar cuando no existan signos de alarma.</p>
+
+          <div class="alert-grid">
+            <label class="check-card" [class.checked]="evaluacion.dificultadRespiratoria">
+              <input type="checkbox" [(ngModel)]="evaluacion.dificultadRespiratoria">
+              <span>Dificultad respiratoria</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.dolorToracico">
+              <input type="checkbox" [(ngModel)]="evaluacion.dolorToracico">
+              <span>Dolor torácico</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.deficitNeurologico">
+              <input type="checkbox" [(ngModel)]="evaluacion.deficitNeurologico">
+              <span>Déficit neurológico</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.sangradoActivo">
+              <input type="checkbox" [(ngModel)]="evaluacion.sangradoActivo">
+              <span>Sangrado activo</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.fiebre">
+              <input type="checkbox" [(ngModel)]="evaluacion.fiebre">
+              <span>Fiebre</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.trauma">
+              <input type="checkbox" [(ngModel)]="evaluacion.trauma">
+              <span>Trauma</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.sospechaSepsis">
+              <input type="checkbox" [(ngModel)]="evaluacion.sospechaSepsis">
+              <span>Sospecha de sepsis</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.riesgoQuirurgico">
+              <input type="checkbox" [(ngModel)]="evaluacion.riesgoQuirurgico">
+              <span>Riesgo quirúrgico</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.riesgoObstetrico">
+              <input type="checkbox" [(ngModel)]="evaluacion.riesgoObstetrico">
+              <span>Riesgo obstétrico</span>
+            </label>
+
+            <label class="check-card" [class.checked]="evaluacion.requiereAislamiento">
+              <input type="checkbox" [(ngModel)]="evaluacion.requiereAislamiento">
+              <span>Aislamiento</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section section-physical">
+          <h4>4. Examen físico</h4>
+
+          <div class="physical-layout">
+
+            <div class="body-panel">
+              <div class="body-silhouette">
+                <img src="assets/clinical-anatomy-front.png" alt="Figura anatómica frontal para seleccionar la zona del examen">
+
+                <button
+                  class="body-marker marker-head"
+                  type="button"
+                  aria-label="Examinar cabeza y cuello"
+                  [class.active]="sistemaExamenActivo === 'cabezaCuello'"
+                  (click)="seleccionarSistemaExamen('cabezaCuello')">
+                </button>
+
+                <button
+                  class="body-marker marker-chest"
+                  type="button"
+                  aria-label="Examinar sistema cardiopulmonar"
+                  [class.active]="sistemaExamenActivo === 'cardiopulmonar'"
+                  (click)="seleccionarSistemaExamen('cardiopulmonar')">
+                </button>
+
+                <button
+                  class="body-marker marker-abdomen"
+                  type="button"
+                  aria-label="Examinar abdomen"
+                  [class.active]="sistemaExamenActivo === 'abdomen'"
+                  (click)="seleccionarSistemaExamen('abdomen')">
+                </button>
+
+                <button
+                  class="body-marker marker-arm"
+                  type="button"
+                  aria-label="Examinar extremidades desde el brazo"
+                  title="Brazo / extremidad superior"
+                  [class.active]="sistemaExamenActivo === 'extremidades'"
+                  (click)="seleccionarSistemaExamen('extremidades')">
+                </button>
+
+                <button
+                  class="body-marker marker-leg"
+                  type="button"
+                  aria-label="Examinar extremidades desde la pierna"
+                  title="Pierna / extremidad inferior"
+                  [class.active]="sistemaExamenActivo === 'extremidades'"
+                  (click)="seleccionarSistemaExamen('extremidades')">
+                </button>
+              </div>
+            </div>
+
+            <div class="physical-content">
+              <div class="system-buttons">
+                <button
+                  type="button"
+                  *ngFor="let sistema of sistemasExamen"
+                  [class.active]="sistemaExamenActivo === sistema.id"
+                  (click)="seleccionarSistemaExamen(sistema.id)">
+                  {{ sistema.etiqueta }}
+                </button>
+              </div>
+
+              <label class="system-textarea">
+                {{ obtenerEtiquetaSistemaActivo() }}
+                <textarea
+                  rows="6"
+                  [ngModel]="obtenerTextoSistemaActivo()"
+                  (ngModelChange)="actualizarTextoSistemaActivo($event)"
+                  placeholder="Registre hallazgos normales o patológicos del sistema seleccionado.">
+                </textarea>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="form-section section-plan">
+          <h4>5. Análisis y plan</h4>
+
+          <div class="plan-grid">
+            <label>
+              Análisis clínico
+              <textarea
+                rows="4"
+                placeholder="Integre hallazgos clínicos, signos vitales, examen físico, sospecha diagnóstica y riesgo."
+                [(ngModel)]="evaluacion.analisisClinico">
+              </textarea>
+            </label>
+
+            <label>
+              Problemas activos
+              <textarea
+                rows="4"
+                placeholder="Enumere problemas activos: dolor abdominal, deshidratación, trauma, sepsis, etc."
+                [(ngModel)]="evaluacion.problemasActivos">
+              </textarea>
+            </label>
+
+            <label>
+              Plan médico inicial
+              <textarea
+                rows="4"
+                placeholder="Registrar hidratación, analgesia, exámenes, imágenes, interconsultas, observación, referencia o alta según corresponda."
+                [(ngModel)]="evaluacion.planMedico">
+              </textarea>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section section-accordion">
+          <button class="accordion-button" type="button" (click)="alternarAntecedentes()">
+            <span>6. Antecedentes y datos complementarios</span>
+            <strong>
+              <i
+                class="bx"
+                [class.bx-chevron-up]="antecedentesAbiertos"
+                [class.bx-chevron-down]="!antecedentesAbiertos">
+              </i>
+            </strong>
+          </button>
+
+          <div class="accordion-content" *ngIf="antecedentesAbiertos">
+            <div class="grid-2">
+              <label>
+                Antecedentes personales
+                <textarea rows="3" [(ngModel)]="evaluacion.antecedentesPersonales"></textarea>
+              </label>
+
+              <label>
+                Antecedentes quirúrgicos
+                <textarea rows="3" [(ngModel)]="evaluacion.antecedentesQuirurgicos"></textarea>
+              </label>
+
+              <label>
+                Antecedentes familiares
+                <textarea rows="3" [(ngModel)]="evaluacion.antecedentesFamiliares"></textarea>
+              </label>
+
+              <label>
+                Antecedentes ginecoobstétricos
+                <textarea rows="3" [(ngModel)]="evaluacion.antecedentesGinecoObstetricos"></textarea>
+              </label>
+            </div>
+
+            <label>
+              Alergias
+              <textarea rows="3" [(ngModel)]="evaluacion.alergias"></textarea>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <aside class="side-panel">
+
+      <div class="side-card alert-side">
+        <div class="side-card-title">
+          <h3>Alertas clínicas activas</h3>
+          <span>{{ obtenerTotalAlertas() }}</span>
+        </div>
+
+        <div class="empty-mini" *ngIf="obtenerAlertasActivas().length === 0">
+          Sin alertas clínicas marcadas.
+        </div>
+
+        <div
+          class="alert-item"
+          *ngFor="let alerta of obtenerAlertasActivas()"
+          [ngClass]="alerta.clase">
+          <div class="alert-icon">
+            <i [class]="alerta.icono"></i>
+          </div>
+
+          <div>
+            <strong>{{ alerta.titulo }}</strong>
+            <small>{{ alerta.detalle }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <h3>Resumen clínico</h3>
+
+        <p>
+          <span>Motivo</span>
+          <strong>{{ obtenerMotivoConsulta() }}</strong>
+        </p>
+
+        <p>
+          <span>Estado general</span>
+          <strong>{{ evaluacion.estadoGeneral || 'No registrado' }}</strong>
+        </p>
+
+        <p>
+          <span>Conciencia</span>
+          <strong>{{ evaluacion.estadoConciencia || 'No registrado' }}</strong>
+        </p>
+
+        <p>
+          <span>Coloración</span>
+          <strong>{{ evaluacion.coloracion || 'No registrado' }}</strong>
+        </p>
+
+        <p>
+          <span>Riesgo</span>
+          <strong class="risk-pill" [ngClass]="obtenerClaseRiesgo()">
+            {{ evaluacion.riesgoClinico || 'No definido' }}
+          </strong>
+        </p>
+
+        <p class="wide">
+          <span>Signos vitales</span>
+          <strong>{{ obtenerSignosVitalesResumen() }}</strong>
+        </p>
+      </div>
+
+      <div class="side-card conduct-card">
+        <h3>Puntos a considerar</h3>
+
+        <ul>
+          <li *ngFor="let conducta of obtenerConductasSugeridas()">
+            {{ conducta }}
+          </li>
+        </ul>
+      </div>
+
+    </aside>
+
+  </div>
+
+</section>
+
+<ng-template #sinAtencion>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bx-clipboard"></i>
+      </div>
+
+      <h2>Primero active una atención</h2>
+
+      <p>
+        Para registrar la evaluación médica, primero debe abrir una atención activa.
+        Puede crearla desde Pacientes o abrir una atención existente desde Inicio.
+      </p>
+
+      <div class="empty-care-actions">
+        <button class="empty-action-button" type="button" (click)="irA('pacientes')">
+          <strong>
+            <i class="bx bxs-user-account"></i>
+            Ir a Pacientes
+          </strong>
+          <span>Busque o registre un paciente y cree una atención.</span>
+        </button>
+
+        <button class="empty-action-button" type="button" (click)="irA('inicio')">
+          <strong>
+            <i class="bx bx-home"></i>
+            Ir a Inicio
+          </strong>
+          <span>Abra una atención activa ya registrada.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</ng-template>

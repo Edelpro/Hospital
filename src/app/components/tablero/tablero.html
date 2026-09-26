@@ -1,0 +1,43 @@
+<section class="dashboard-board" aria-label="Atenciones de emergencia" [attr.aria-busy]="cargandoTablero">
+  <div class="board-heading">
+    <div><span class="eyebrow">VISTA GENERAL</span><h2>El estado de cada atención, en un lugar.</h2><p>Consulte pacientes en emergencia y vuelva a sus atenciones anteriores.</p></div>
+    <button class="primary-button" type="button" (click)="nuevoPaciente.emit()"><i class="bx bx-plus" aria-hidden="true"></i> Buscar o registrar paciente</button>
+  </div>
+  <div class="metrics-grid" aria-label="Resumen de atenciones">
+    <div class="metric-card"><span><i class="bx bx-pulse" aria-hidden="true"></i> En emergencia</span><strong>{{ ultimaActualizacion ? totalActivos : '—' }}</strong><small>Atenciones activas</small></div>
+    <div class="metric-card critical"><span><i class="bx bx-error-circle" aria-hidden="true"></i> Prioridad alta</span><strong>{{ ultimaActualizacion ? totalCriticos : '—' }}</strong><small>Registradas en rojo o naranja</small></div>
+    <div class="metric-card"><span><i class="bx bx-time-five" aria-hidden="true"></i> Por clasificar</span><strong>{{ ultimaActualizacion ? totalSinTriaje : '—' }}</strong><small>Activas sin triaje</small></div>
+    <div class="metric-card history"><span><i class="bx bx-history" aria-hidden="true"></i> Historial</span><strong>{{ ultimaActualizacion ? totalHistorial : '—' }}</strong><small>Con egreso o cerradas</small></div>
+  </div>
+  <div class="records-panel">
+    <div class="records-header">
+      <div class="scope-buttons" role="group" aria-label="Vista de atenciones">
+        <button type="button" [attr.aria-pressed]="alcance === 'Todas'" (click)="cambiarAlcance('Todas')">Todas <span>{{ tablero.length }}</span></button>
+        <button type="button" [attr.aria-pressed]="alcance === 'Activas'" (click)="cambiarAlcance('Activas')">Activas <span>{{ totalActivos }}</span></button>
+        <button type="button" [attr.aria-pressed]="alcance === 'Historial'" (click)="cambiarAlcance('Historial')">Historial <span>{{ totalHistorial }}</span></button>
+      </div>
+      <button class="refresh-button" type="button" (click)="cargarTablero()" [disabled]="cargandoTablero"><i class="bx bx-refresh" aria-hidden="true"></i> {{ cargandoTablero ? 'Actualizando…' : 'Actualizar' }}</button>
+    </div>
+    <div class="filters-panel">
+      <div class="search-field"><label for="buscar-tablero">Buscar atención</label><div class="search-input"><i class="bx bx-search" aria-hidden="true"></i><input #buscar id="buscar-tablero" type="search" placeholder="Paciente, cédula o AT-…" [(ngModel)]="busqueda" (ngModelChange)="pagina = 1" autocomplete="off"><button *ngIf="busqueda" type="button" aria-label="Limpiar búsqueda" (click)="busqueda = ''; pagina = 1; buscar.focus()">×</button></div></div>
+      <div class="filter-field"><label for="prioridad-tablero">Prioridad de triaje</label><select id="prioridad-tablero" [ngModel]="filtroPrioridad" (ngModelChange)="cambiarFiltroPrioridad($event)"><option *ngFor="let filtro of filtrosPrioridad" [value]="filtro">{{ filtro }}</option></select></div>
+      <div class="filter-field"><label for="estado-tablero">Estado de atención</label><select id="estado-tablero" [ngModel]="filtroEstado" (ngModelChange)="cambiarFiltroEstado($event)"><option *ngFor="let filtro of filtrosEstado" [value]="filtro">{{ filtro }}</option></select></div>
+    </div>
+    <div class="info-note" *ngIf="ultimaActualizacion && !errorCarga && totalActivos === 0 && totalHistorial > 0"><i class="bx bx-info-circle" aria-hidden="true"></i><span>No hay atenciones activas. Sus {{ totalHistorial }} atenciones anteriores siguen disponibles en <strong>Historial</strong>.</span></div>
+    <div class="error-note" role="alert" *ngIf="errorCarga"><strong>No se pudo actualizar el tablero.</strong><span>{{ errorCarga }}</span><span *ngIf="ultimaActualizacion">Se conserva la última información cargada.</span><button type="button" (click)="cargarTablero()" [disabled]="cargandoTablero">Reintentar</button></div>
+    <div class="loading-note" role="status" *ngIf="cargandoTablero">Consultando atenciones…</div>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Lista de atenciones, desplazable horizontalmente">
+      <table *ngIf="registrosPagina.length > 0"><caption class="sr-only">Atenciones de emergencia. Primero las activas por prioridad; luego el historial más reciente.</caption><thead><tr><th scope="col">Paciente / atención</th><th scope="col">Prioridad</th><th scope="col">Motivo e ingreso</th><th scope="col">Estado</th><th scope="col">Tiempo en emergencia</th><th scope="col">Acciones</th></tr></thead>
+      <tbody><tr *ngFor="let atencion of registrosPagina; trackBy: trackByAtencion" [class.historical-row]="!esActiva(atencion)">
+        <td class="patient-cell"><strong>{{ obtenerNombrePaciente(atencion) }}</strong><span>{{ obtenerCedulaPaciente(atencion) }}</span><small>AT-{{ atencion.id }}</small></td>
+        <td><span class="priority-badge" [ngClass]="obtenerClasePrioridad(atencion.triaje?.prioridad)"><span class="priority-dot" aria-hidden="true"></span>{{ obtenerPrioridadTexto(atencion.triaje?.prioridad) }}</span></td>
+        <td class="reason-cell"><span>{{ atencion.motivoConsulta || 'Sin motivo registrado' }}</span><small>{{ formatearFecha(atencion.fechaIngreso) }}</small></td>
+        <td><span class="state-badge">{{ obtenerEstadoTexto(atencion.estado) }}</span></td>
+        <td class="wait-cell">{{ esActiva(atencion) ? obtenerTiempoEspera(atencion.fechaIngreso) : 'Finalizada' }}</td>
+        <td><div class="action-row"><button class="open-button" type="button" (click)="seleccionarAtencion(atencion)">{{ esActiva(atencion) ? 'Continuar' : 'Ver reporte' }} <span aria-hidden="true">↗</span></button><button class="delete-attention-button" type="button" *ngIf="puedeEliminarAtencion(atencion)" [disabled]="eliminandoAtencionId === atencion.id" [attr.aria-label]="'Eliminar atención AT-' + atencion.id" title="Eliminar atención creada por error" (click)="eliminarAtencion(atencion, $event)"><i class="bx bx-trash" aria-hidden="true"></i></button></div></td>
+      </tr></tbody></table>
+    </div>
+    <div class="empty-state" *ngIf="!cargandoTablero && !errorCarga && totalFiltrados === 0"><i class="bx bx-folder-open" aria-hidden="true"></i><h3>{{ tablero.length === 0 ? 'Todavía no hay atenciones registradas' : 'No hay atenciones en esta vista' }}</h3><p>{{ tablero.length === 0 ? 'Busque o registre un paciente para iniciar su atención.' : 'Cambie de vista o quite los filtros para consultar otros registros.' }}</p><div><button type="button" class="open-button" *ngIf="tablero.length > 0" (click)="cambiarAlcance('Todas'); limpiarFiltros()">Ver todas las atenciones</button><button type="button" class="primary-button" *ngIf="tablero.length === 0" (click)="nuevoPaciente.emit()">Ir a pacientes</button></div></div>
+    <footer class="table-footer"><span role="status">{{ totalFiltrados }} {{ totalFiltrados === 1 ? 'atención encontrada' : 'atenciones encontradas' }}<small *ngIf="ultimaActualizacion">Actualizado a las {{ ultimaActualizacion | date:'HH:mm' }}</small></span><div class="pagination"><button type="button" aria-label="Página anterior" [disabled]="pagina <= 1" (click)="pagina = pagina - 1">←</button><span>{{ pagina }} / {{ paginas }}</span><button type="button" aria-label="Página siguiente" [disabled]="pagina >= paginas" (click)="pagina = pagina + 1">→</button></div></footer>
+  </div>
+</section>

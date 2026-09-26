@@ -1,0 +1,315 @@
+<app-presentacion-proyecto
+  *ngIf="mostrarPresentacion"
+  [instalacionDisponible]="instalacionDisponible"
+  (abrirSistema)="abrirSistema()"
+  (instalar)="instalarAplicacion()">
+</app-presentacion-proyecto>
+
+<ng-container *ngIf="!mostrarPresentacion">
+
+<app-login
+  *ngIf="!usuarioActual"
+  (sesionIniciada)="procesarSesionIniciada($event)">
+</app-login>
+
+<div class="hospital-layout" *ngIf="usuarioActual">
+  <div class="mobile-toolbar"><strong>HCU 008 · Emergencia</strong><button type="button" (click)="menuAbierto = !menuAbierto" [attr.aria-expanded]="menuAbierto" aria-controls="menu-hospital">{{ menuAbierto ? "Cerrar menú" : "Menú" }}</button></div>
+
+  <a class="skip-link" href="#contenido-principal">Ir al contenido</a>
+  <aside class="sidebar" id="menu-hospital" [class.mobile-open]="menuAbierto">
+
+    <div class="logo-box">
+      <div class="logo-icon">
+        <img src="assets/branding/logo-hcu008.png" alt="Logo HCU 008">
+      </div>
+
+      <div class="logo-text">
+        <h1>HCU 008</h1>
+        <p>Emergencia</p>
+      </div>
+    </div>
+
+    <nav class="menu" aria-label="Menú principal" (click)="menuAbierto = false">
+
+      <button type="button" [class.active]="esVista('inicio')" [attr.aria-current]="esVista('inicio') ? 'page' : null" (click)="cambiarVista('inicio')">
+        <span class="menu-icon"><i class="bx bx-home"></i></span>
+        <span>Tablero</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('pacientes')" [attr.aria-current]="esVista('pacientes') ? 'page' : null" (click)="cambiarVista('pacientes')">
+        <span class="menu-icon"><i class="bx bxs-user-account"></i></span>
+        <span>Pacientes</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('atenciones')" [attr.aria-current]="esVista('atenciones') ? 'page' : null" (click)="cambiarVista('atenciones')">
+        <span class="menu-icon"><i class="bx bx-plus-medical"></i></span>
+        <span>Atenciones</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('triaje')" [attr.aria-current]="esVista('triaje') ? 'page' : null" (click)="cambiarVista('triaje')">
+        <span class="menu-icon"><i class="bx bx-pulse"></i></span>
+        <span>Triaje</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('evaluacion')" [attr.aria-current]="esVista('evaluacion') ? 'page' : null" (click)="cambiarVista('evaluacion')">
+        <span class="menu-icon"><i class="bx bx-clipboard"></i></span>
+        <span>Evaluación médica</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('diagnosticos')" [attr.aria-current]="esVista('diagnosticos') ? 'page' : null" (click)="cambiarVista('diagnosticos')">
+        <span class="menu-icon"><i class="bx bx-list-check"></i></span>
+        <span>Diagnósticos</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('prescripciones')" [attr.aria-current]="esVista('prescripciones') ? 'page' : null" (click)="cambiarVista('prescripciones')">
+        <span class="menu-icon"><i class="bx bxs-capsule"></i></span>
+        <span>Prescripciones</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('examenes')" [attr.aria-current]="esVista('examenes') ? 'page' : null" (click)="cambiarVista('examenes')">
+        <span class="menu-icon"><i class="bx bx-test-tube"></i></span>
+        <span>Exámenes</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('evoluciones')" [attr.aria-current]="esVista('evoluciones') ? 'page' : null" (click)="cambiarVista('evoluciones')">
+        <span class="menu-icon"><i class="bx bx-notepad"></i></span>
+        <span>Evoluciones</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('egreso')" [attr.aria-current]="esVista('egreso') ? 'page' : null" (click)="cambiarVista('egreso')">
+        <span class="menu-icon"><i class="bx bx-log-out-circle"></i></span>
+        <span>Egreso</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('reportes')" [attr.aria-current]="esVista('reportes') ? 'page' : null" (click)="cambiarVista('reportes')">
+        <span class="menu-icon"><i class="bx bxs-file-pdf"></i></span>
+        <span>Reportes</span>
+      </button>
+
+      <button type="button" [class.active]="esVista('mensajeria')" [attr.aria-current]="esVista('mensajeria') ? 'page' : null" (click)="cambiarVista('mensajeria')">
+        <span class="menu-icon"><i class="bx bx-message-rounded-dots"></i></span>
+        <span>Mensajería</span>
+      </button>
+
+      <div class="menu-divider" *ngIf="esAdministrador()"></div>
+
+      <button
+        type="button"
+        *ngIf="esAdministrador()"
+        [class.active]="esVista('admin-usuarios')" [attr.aria-current]="esVista('admin-usuarios') ? 'page' : null"
+        (click)="cambiarVista('admin-usuarios')">
+        <span class="menu-icon"><i class="bx bx-user-check"></i></span>
+        <span>Usuarios</span>
+      </button>
+
+      <button
+        type="button"
+        *ngIf="esAdministrador()"
+        [class.active]="esVista('admin-catalogos')" [attr.aria-current]="esVista('admin-catalogos') ? 'page' : null"
+        (click)="cambiarVista('admin-catalogos')">
+        <span class="menu-icon"><i class="bx bx-slider-alt"></i></span>
+        <span>Catálogos</span>
+      </button>
+
+    </nav>
+
+    <div class="user-box">
+      <div class="user-avatar">{{ usuarioActual.iniciales }}</div>
+
+      <div class="user-info">
+        <strong>{{ authService.obtenerNombreCompleto() }}</strong>
+        <span>{{ usuarioActual.rol }}</span>
+      </div>
+
+      <button class="logout-button" type="button" (click)="cerrarSesion()">
+        Salir
+      </button>
+    </div>
+
+  </aside>
+
+  <main class="main-content" id="contenido-principal" tabindex="-1">
+
+    <header class="topbar">
+      <div class="topbar-text">
+        <p class="eyebrow">HISTORIA CLÍNICA ÚNICA / FORMULARIO 008</p>
+        <h2>{{ tituloVista }}</h2>
+      </div>
+
+
+
+      <div class="topbar-actions">
+        <button class="install-button" *ngIf="instalacionDisponible" type="button" (click)="instalarAplicacion()">
+          <i class="bx bx-download" aria-hidden="true"></i>
+          Instalar aplicación
+        </button>
+        <button class="pdf-button" [disabled]="!atencionActual" [title]="atencionActual ? 'Abrir reporte de la atención seleccionada' : 'Seleccione una atención para ver su reporte'" type="button" (click)="cambiarVista('reportes')">
+          <span><i class="bx bxs-file-pdf"></i></span>
+          Ver reporte
+        </button>
+      </div>
+    </header>
+
+    <section class="patient-card" *ngIf="pacienteActual">
+      <div class="patient-avatar">
+        <i class="bx bxs-user"></i>
+      </div>
+
+      <div class="patient-info">
+        <h3>{{ obtenerNombrePacienteActual() }}</h3>
+
+        <p *ngIf="pacienteActual">
+          {{ obtenerEdadTexto(pacienteActual.fechaNacimiento) }}
+          <span>•</span>
+          {{ pacienteActual.sexo || 'Sexo no registrado' }}
+          <span>•</span>
+          Cédula: {{ pacienteActual.cedula || 'Sin cédula' }}
+        </p>
+
+        <p *ngIf="!pacienteActual">
+          Seleccione un paciente desde el módulo Pacientes o abra una atención desde el tablero.
+        </p>
+      </div>
+
+      <div class="patient-status">
+        <div class="status-icon">
+          <i class="bx bx-time-five"></i>
+        </div>
+
+        <div>
+          <span>Atención seleccionada</span>
+          <strong>{{ obtenerCodigoAtencion() }}</strong>
+        </div>
+      </div>
+
+      <div class="patient-status">
+        <div class="status-icon">
+          <i class="bx bx-building-house"></i>
+        </div>
+
+        <div>
+          <span>Servicio</span>
+          <strong>Emergencia</strong>
+        </div>
+      </div>
+
+      <div class="patient-status">
+        <div class="status-icon">
+          <i class="bx bx-pulse"></i>
+        </div>
+
+        <div>
+          <span>Estado</span>
+          <strong class="green">{{ obtenerEstadoAtencion() }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <app-tablero
+      (nuevoPaciente)="cambiarVista('pacientes')"
+      *ngIf="vistaActiva === 'inicio' || vistaActiva === 'tablero'"
+      (atencionSeleccionada)="seleccionarAtencion($event)"
+      (atencionEliminada)="procesarAtencionEliminada($event)">
+    </app-tablero>
+
+    <app-pacientes
+      [hidden]="vistaActiva !== 'pacientes'"
+      (pacienteSeleccionado)="seleccionarPaciente($event)"
+      (pacienteActualizado)="actualizarPacienteSeleccionado($event)"
+      (pacienteEliminado)="limpiarPacienteEliminado($event)">
+    </app-pacientes>
+
+    <app-atenciones
+      [hidden]="vistaActiva !== 'atenciones'"
+      [pacienteActual]="pacienteActual"
+      (atencionCreada)="seleccionarAtencion($event)"
+      (atencionEliminada)="procesarAtencionEliminada($event)"
+      (irModulo)="cambiarVista($event)">
+    </app-atenciones>
+
+    <app-triaje
+      [hidden]="vistaActiva !== 'triaje'"
+      [atencionActual]="atencionActual"
+      (triajeGuardado)="procesarTriajeGuardado($event)"
+      (irModulo)="cambiarVista($event)">
+    </app-triaje>
+
+    <app-evaluacion-medica
+      [hidden]="vistaActiva !== 'evaluacion'"
+      [atencionActual]="atencionActual"
+      (evaluacionGuardada)="procesarEvaluacionGuardada()"
+      (irModulo)="cambiarVista($event)">
+    </app-evaluacion-medica>
+
+    <app-diagnosticos
+      [hidden]="vistaActiva !== 'diagnosticos'"
+      (registroEliminado)="refrescarAtencion()"
+      [atencionActual]="atencionActual"
+      (diagnosticoGuardado)="procesarDiagnosticoGuardado()"
+      (irModulo)="cambiarVista($event)">
+    </app-diagnosticos>
+
+    <app-prescripciones
+      [hidden]="vistaActiva !== 'prescripciones'"
+      (registroEliminado)="refrescarAtencion()"
+      [atencionActual]="atencionActual"
+      (prescripcionGuardada)="procesarPrescripcionGuardada()"
+      (irModulo)="cambiarVista($event)">
+    </app-prescripciones>
+
+    <app-examenes
+      [hidden]="vistaActiva !== 'examenes'"
+      (registroEliminado)="refrescarAtencion()"
+      [atencionActual]="atencionActual"
+      (examenGuardado)="procesarExamenGuardado()"
+      (irModulo)="cambiarVista($event)">
+    </app-examenes>
+
+    <app-evoluciones
+      [hidden]="vistaActiva !== 'evoluciones'"
+      (registroEliminado)="refrescarAtencion()"
+      [atencionActual]="atencionActual"
+      (evolucionGuardada)="procesarEvolucionGuardada()"
+      (irModulo)="cambiarVista($event)">
+    </app-evoluciones>
+
+    <app-egreso
+      [hidden]="vistaActiva !== 'egreso'"
+      (registroEliminado)="refrescarAtencion()"
+      [atencionActual]="atencionActual"
+      (egresoGuardado)="procesarEgresoGuardado()"
+      (irModulo)="cambiarVista($event)">
+    </app-egreso>
+
+    <app-reportes
+      *ngIf="vistaActiva === 'reportes'"
+      [atencionActual]="atencionActual"
+      (irModulo)="cambiarVista($event)">
+    </app-reportes>
+
+    <app-mensajeria
+      *ngIf="vistaActiva === 'mensajeria'"
+      [atencionActual]="atencionActual">
+    </app-mensajeria>
+
+    <app-admin-usuarios
+      *ngIf="vistaActiva === 'admin-usuarios' && esAdministrador()"
+      (irModulo)="cambiarVista($event)">
+    </app-admin-usuarios>
+
+    <app-admin-catalogos
+      *ngIf="vistaActiva === 'admin-catalogos' && esAdministrador()"
+      (irModulo)="cambiarVista($event)">
+    </app-admin-catalogos>
+
+    <app-placeholders
+      *ngIf="esModuloTemporal()"
+      [vista]="vistaActiva">
+    </app-placeholders>
+
+  </main>
+
+</div>
+</ng-container>
+
+<app-ui-modal></app-ui-modal>

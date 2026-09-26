@@ -1,0 +1,348 @@
+<section class="users-admin-page">
+
+  <div class="users-header">
+    <div>
+      <h2>
+        <i class="bx bx-user-check"></i>
+        Administración de usuarios
+      </h2>
+      <p>Gestione usuarios, solicitudes de acceso, roles, estado y contraseña del sistema HCU 008.</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="secondary-button" (click)="irACatalogos()">
+        <i class="bx bx-slider-alt"></i>
+        Catálogos
+      </button>
+
+      <button type="button" class="secondary-button" (click)="irAInicio()">
+        <i class="bx bx-home"></i>
+        Inicio
+      </button>
+
+      <button type="button" class="primary-button" (click)="recargarTodo()">
+        <i class="bx bx-refresh"></i>
+        Recargar
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span>Total</span>
+      <strong>{{ usuarios.length }}</strong>
+      <small>Usuarios registrados</small>
+    </div>
+
+    <div class="stat-card green">
+      <span>Activos</span>
+      <strong>{{ obtenerTotalActivos() }}</strong>
+      <small>Pueden iniciar sesión</small>
+    </div>
+
+    <div class="stat-card red">
+      <span>Inactivos</span>
+      <strong>{{ obtenerTotalInactivos() }}</strong>
+      <small>Acceso bloqueado</small>
+    </div>
+
+    <div class="stat-card blue">
+      <span>Solicitudes</span>
+      <strong>{{ obtenerTotalPendientes() }}</strong>
+      <small>Pendientes de revisión</small>
+    </div>
+  </div>
+
+  <section class="requests-card">
+    <div class="requests-header">
+      <div>
+        <h3>
+          <i class="bx bx-user-plus"></i>
+          Solicitudes pendientes
+        </h3>
+        <p>{{ obtenerTotalPendientes() }} solicitud(es) esperando revisión del administrador.</p>
+      </div>
+
+      <button type="button" class="secondary-button" (click)="cargarSolicitudes()">
+        <i class="bx bx-refresh"></i>
+        Recargar solicitudes
+      </button>
+    </div>
+
+    <div class="loading-card" *ngIf="cargandoSolicitudes">
+      Cargando solicitudes...
+    </div>
+
+    <div class="empty-card" *ngIf="!cargandoSolicitudes && solicitudesPendientes.length === 0">
+      <i class="bx bx-check-circle"></i>
+      <strong>No hay solicitudes pendientes</strong>
+      <span>Las solicitudes enviadas desde el login aparecerán aquí.</span>
+    </div>
+
+    <div class="requests-list" *ngIf="!cargandoSolicitudes && solicitudesPendientes.length > 0">
+      <div
+        class="request-item"
+        *ngFor="let solicitud of solicitudesPendientes; trackBy: trackBySolicitud">
+
+        <div class="request-info">
+          <strong>{{ solicitud.nombres }}</strong>
+          <span>{{ solicitud.correo }}</span>
+          <small>
+            Rol solicitado: {{ solicitud.rolSolicitado }} ·
+            Fecha: {{ solicitud.fechaSolicitud | date:'dd/MM/yyyy HH:mm' }}
+          </small>
+        </div>
+
+        <div class="request-form" *ngIf="solicitud.id as solicitudId">
+          <input
+            type="text"
+            placeholder="Apellidos para crear usuario"
+            [(ngModel)]="datosAprobacion[solicitudId].apellidos">
+
+          <input
+            type="password"
+            placeholder="Clave inicial"
+            [(ngModel)]="datosAprobacion[solicitudId].claveInicial">
+
+          <select [(ngModel)]="datosAprobacion[solicitudId].rol">
+            <option value="Doctor">Doctor</option>
+            <option value="Admin">Admin</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Observación si rechaza"
+            [(ngModel)]="datosAprobacion[solicitudId].observacion">
+        </div>
+
+        <div class="request-actions">
+          <button
+            type="button"
+            class="approve-button"
+            [disabled]="procesandoSolicitud"
+            (click)="aprobarSolicitud(solicitud)">
+            <i class="bx bx-check"></i>
+            Aprobar
+          </button>
+
+          <button
+            type="button"
+            class="reject-button"
+            [disabled]="procesandoSolicitud"
+            (click)="rechazarSolicitud(solicitud)">
+            <i class="bx bx-x"></i>
+            Rechazar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="users-layout">
+
+    <section class="form-card">
+      <div class="form-title">
+        <div>
+          <h3>
+            <i class="bx bx-user-plus"></i>
+            {{ modoEdicion ? 'Editar usuario' : 'Nuevo usuario' }}
+          </h3>
+          <p>
+            {{ modoEdicion ? 'Actualice nombres, apellidos y rol.' : 'Cree usuarios reales para iniciar sesión.' }}
+          </p>
+        </div>
+
+        <button type="button" class="clear-button" (click)="limpiarFormulario()">
+          <i class="bx bx-eraser"></i>
+          Limpiar
+        </button>
+      </div>
+
+      <label>
+        Nombres
+        <input
+          type="text"
+          maxlength="120"
+          placeholder="Ej: Juan Carlos"
+          [(ngModel)]="formulario.nombres">
+      </label>
+
+      <label>
+        Apellidos
+        <input
+          type="text"
+          maxlength="120"
+          placeholder="Ej: Pérez Mora"
+          [(ngModel)]="formulario.apellidos">
+      </label>
+
+      <label>
+        Correo
+        <input
+          type="email"
+          maxlength="160"
+          placeholder="Ej: juan.perez@hcu008.com"
+          [(ngModel)]="formulario.correo"
+          [disabled]="modoEdicion">
+      </label>
+
+      <label *ngIf="!modoEdicion">
+        Contraseña
+        <input
+          type="password"
+          maxlength="60"
+          placeholder="Mínimo 6 caracteres"
+          [(ngModel)]="formulario.clave">
+      </label>
+
+      <label>
+        Rol
+        <select [(ngModel)]="formulario.rol">
+          <option *ngFor="let rol of roles" [ngValue]="rol">
+            {{ rol }}
+          </option>
+        </select>
+      </label>
+
+      <div class="info-card">
+        <strong>Regla de seguridad</strong>
+        <span>Solo el usuario Admin puede crear, editar, activar o desactivar usuarios.</span>
+      </div>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="guardarUsuario()"
+        [disabled]="guardando">
+        <i class="bx bx-save"></i>
+        {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar usuario' : 'Crear usuario') }}
+      </button>
+    </section>
+
+    <section class="table-card">
+      <div class="table-header">
+        <div>
+          <h3>
+            <i class="bx bx-list-ul"></i>
+            Usuarios registrados
+          </h3>
+          <p>{{ usuariosFiltrados.length }} resultado(s)</p>
+        </div>
+
+        <div class="search-box">
+          <i class="bx bx-search"></i>
+          <input
+            type="text"
+            placeholder="Buscar por nombre, correo o rol"
+            [(ngModel)]="textoBusqueda"
+            (input)="aplicarFiltro()">
+        </div>
+      </div>
+
+      <div class="loading-card" *ngIf="cargando">
+        Cargando usuarios...
+      </div>
+
+      <div class="empty-card" *ngIf="!cargando && usuariosFiltrados.length === 0">
+        <i class="bx bx-user-x"></i>
+        <strong>No hay usuarios para mostrar</strong>
+        <span>Cree un usuario o cambie el filtro de búsqueda.</span>
+      </div>
+
+      <div class="users-table-wrap" *ngIf="!cargando && usuariosFiltrados.length > 0">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Clave</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let usuario of usuariosFiltrados; trackBy: trackByUsuario">
+              <td>
+                <strong>{{ obtenerNombreCompleto(usuario) }}</strong>
+              </td>
+
+              <td>
+                <span class="email-text">{{ usuario.correo }}</span>
+              </td>
+
+              <td>
+                <span class="role-pill" [class.admin]="usuario.rol === 'Admin'">
+                  {{ usuario.rol }}
+                </span>
+              </td>
+
+              <td>
+                <span class="status-pill" [class.inactive]="!usuario.activo">
+                  {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+
+              <td>
+                <small>{{ usuario.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</small>
+              </td>
+
+              <td>
+                <div class="password-row">
+                  <input
+                    type="password"
+                    placeholder="Nueva clave"
+                    [(ngModel)]="clavesPorUsuario[usuario.id || 0]">
+
+                  <button
+                    type="button"
+                    class="icon-button blue"
+                    title="Cambiar contraseña"
+                    (click)="cambiarClaveUsuario(usuario)">
+                    <i class="bx bx-key"></i>
+                  </button>
+                </div>
+              </td>
+
+              <td>
+                <div class="action-row">
+                  <button
+                    type="button"
+                    class="icon-button"
+                    title="Editar usuario"
+                    (click)="editarUsuario(usuario)">
+                    <i class="bx bx-edit"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="icon-button green"
+                    title="Activar usuario"
+                    *ngIf="!usuario.activo"
+                    (click)="activarUsuario(usuario)">
+                    <i class="bx bx-check-circle"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="icon-button red"
+                    title="Desactivar usuario"
+                    *ngIf="usuario.activo"
+                    (click)="desactivarUsuario(usuario)">
+                    <i class="bx bx-block"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </div>
+
+</section>

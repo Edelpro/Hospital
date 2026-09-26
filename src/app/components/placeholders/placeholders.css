@@ -1,0 +1,32 @@
+:host {
+  --primary-light: #a4c3b2;
+  --accent-color: #cce3de;
+  --light-bg: #eaf4f4;
+  --mint-cream: #f6fff8;
+  --white: #ffffff;
+  --shadow-md: 0 8px 24px rgba(26, 77, 46, 0.08);
+  --radius-lg: 16px;
+
+  display: block;
+}
+
+.module-placeholder {
+  background: var(--white);
+  border: 1px solid var(--accent-color);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  box-shadow: var(--shadow-md);
+}
+
+.module-placeholder h2 {
+  margin: 0 0 10px;
+  color: var(--dark-text);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.module-placeholder p {
+  margin: 0;
+  color: var(--gray-text);
+  font-size: 16px;
+}

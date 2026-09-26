@@ -1,0 +1,30 @@
+<dialog #dialog class="modal-backdrop" *ngIf="mensaje$ | async as mensaje" aria-labelledby="ui-message-title" aria-describedby="ui-message-body" (cancel)="cerrar()">
+  <div class="modal-card" [ngClass]="mensaje.tipo">
+
+    <div class="modal-icon">
+      {{ obtenerIcono(mensaje.tipo) }}
+    </div>
+
+    <div class="modal-content">
+      <h3 id="ui-message-title">{{ mensaje.titulo }}</h3>
+      <p id="ui-message-body">{{ mensaje.mensaje }}</p>
+    </div>
+
+    <div class="modal-actions" *ngIf="mensaje.tipo !== 'confirmacion'">
+      <button class="btn-primary" type="button" (click)="cerrar()">
+        Aceptar
+      </button>
+    </div>
+
+    <div class="modal-actions" *ngIf="mensaje.tipo === 'confirmacion'">
+      <button class="btn-secondary" type="button" (click)="cerrar()">
+        {{ mensaje.textoCancelar || 'Cancelar' }}
+      </button>
+
+      <button class="btn-primary" type="button" (click)="confirmar(mensaje)">
+        {{ mensaje.textoConfirmar || 'Confirmar' }}
+      </button>
+    </div>
+
+  </div>
+</dialog>

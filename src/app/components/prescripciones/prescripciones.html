@@ -1,0 +1,397 @@
+<p class="readonly-notice" role="status" *ngIf="soloLectura">Atención cerrada: solo consulta.</p>
+<section class="prescription-module" *ngIf="atencionActual; else sinAtencion">
+
+  <div class="prescription-header-card">
+    <div class="header-left">
+      <div class="header-logo">
+        <i class="bx bx-capsule"></i>
+      </div>
+
+      <div>
+        <h2>4. Prescripciones</h2>
+        <p>Registro de tratamiento farmacológico e indicaciones iniciales</p>
+      </div>
+    </div>
+
+    <button
+      class="continue-button"
+      type="button"
+      (click)="continuarExamenes()">
+      Continuar a exámenes
+      <i class="bx bx-right-arrow-alt"></i>
+    </button>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span>Paciente</span>
+      <strong>{{ obtenerNombrePaciente() }}</strong>
+      <small>Cédula: {{ obtenerCedulaPaciente() }}</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Motivo de consulta</span>
+      <strong>{{ obtenerMotivoConsulta() }}</strong>
+      <small>Dato tomado del ingreso</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Total prescripciones</span>
+      <strong>{{ obtenerTotalPrescripciones() }}</strong>
+      <small>Registradas en esta atención</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Urgentes</span>
+      <strong>{{ obtenerTotalUrgentes() }}</strong>
+      <small>Prioridad clínica</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Administrar ahora</span>
+      <strong>{{ obtenerTotalAdministrarAhora() }}</strong>
+      <small>Aplicación inmediata</small>
+    </div>
+  </div>
+
+  <div class="safety-notice">
+    <div>
+      <i class="bx bx-shield-quarter"></i>
+    </div>
+
+    <p>
+      Las plantillas rápidas son una ayuda de digitación. La dosis debe verificarse según edad,
+      peso, alergias, embarazo, función renal, función hepática y criterio médico.
+    </p>
+  </div>
+
+  <div class="frequent-card">
+    <div class="frequent-header">
+      <div>
+        <h4>Medicamentos frecuentes</h4>
+        <p>Seleccione una opción rápida y edite dosis, vía, frecuencia o indicaciones si corresponde.</p>
+      </div>
+    </div>
+
+    <div class="frequent-grid">
+      <button
+        type="button"
+        *ngFor="let item of medicamentosFrecuentes; trackBy: trackByMedicamentoFrecuente"
+        [ngClass]="item.clase"
+        (click)="seleccionarMedicamentoFrecuente(item)">
+        <strong>{{ item.medicamento }}</strong>
+        <span>{{ item.dosis }} · {{ item.viaAdministracion }}</span>
+        <small>{{ item.grupo }}</small>
+      </button>
+    </div>
+  </div>
+
+  <div class="prescription-layout">
+
+    <section class="form-panel">
+
+      <div class="form-card">
+
+        <div class="form-title">
+          <div>
+            <h4>
+              {{ formulario.id ? 'Editar prescripción' : 'Nueva prescripción' }}
+            </h4>
+
+            <p>
+              Registre medicamento, dosis, vía, frecuencia, duración e indicaciones.
+            </p>
+          </div>
+
+          <span class="edit-pill" *ngIf="formulario.id">
+            En edición
+          </span>
+        </div>
+
+        <div class="helper-card" *ngIf="cargandoCatalogos">
+          <strong>Cargando catálogos</strong>
+          <span>Obteniendo vías y frecuencias desde la base de datos.</span>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Medicamento
+            <input
+              type="text"
+              maxlength="180"
+              placeholder="Ejemplo: Paracetamol"
+              [(ngModel)]="formulario.medicamento">
+          </label>
+
+          <label>
+            Presentación
+            <input
+              type="text"
+              maxlength="120"
+              placeholder="Tableta, ampolla, solución..."
+              [(ngModel)]="formulario.presentacion">
+          </label>
+
+          <label>
+            Dosis
+            <input
+              type="text"
+              maxlength="80"
+              placeholder="Ejemplo: 1 g"
+              [(ngModel)]="formulario.dosis">
+          </label>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Vía
+            <select [(ngModel)]="formulario.viaAdministracion">
+              <option *ngFor="let via of viasAdministracion" [ngValue]="via">
+                {{ via }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Frecuencia
+            <select [(ngModel)]="formulario.frecuencia">
+              <option *ngFor="let frecuencia of frecuencias" [ngValue]="frecuencia">
+                {{ frecuencia }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Duración
+            <select [(ngModel)]="formulario.duracion">
+              <option *ngFor="let duracion of duraciones" [ngValue]="duracion">
+                {{ duracion }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Cantidad
+          <input
+            type="text"
+            maxlength="80"
+            placeholder="Ejemplo: 10 tabletas, 1 ampolla, 1 funda"
+            [(ngModel)]="formulario.cantidad">
+        </label>
+
+        <label>
+          Indicaciones
+          <textarea
+            rows="5"
+            maxlength="800"
+            placeholder="Indique observaciones clínicas, precauciones, hidratación, vigilancia o indicaciones al paciente."
+            [(ngModel)]="formulario.indicaciones">
+          </textarea>
+        </label>
+
+        <div class="flag-grid">
+          <label class="check-card" [class.checked]="formulario.administrarAhora">
+            <input
+              type="checkbox"
+              [(ngModel)]="formulario.administrarAhora">
+
+            <span>Administrar ahora</span>
+          </label>
+
+          <label class="check-card urgent" [class.checked]="formulario.esUrgente">
+            <input
+              type="checkbox"
+              [(ngModel)]="formulario.esUrgente">
+
+            <span>Prescripción urgente</span>
+          </label>
+        </div>
+
+        <div class="helper-card">
+          <strong>Regla rápida</strong>
+
+          <span>
+            Evite duplicar el mismo medicamento con la misma vía y frecuencia. Si necesita corregir, use Editar.
+          </span>
+        </div>
+
+        <div class="template-save-row">
+          <label>
+            Nombre de la plantilla
+            <input type="text" maxlength="60" placeholder="Ejemplo: Analgesia inicial" [(ngModel)]="nombreNuevaPlantilla" [disabled]="soloLectura">
+          </label>
+          <small>Complete la prescripción y guárdela como opción rápida para este equipo.</small>
+        </div>
+
+        <div class="form-actions">
+          <button class="clear-button" type="button" (click)="crearPlantillaPersonalizada()" [disabled]="soloLectura || guardandoPrescripcion"><i class="bx bx-bookmark-plus"></i> Crear plantilla</button>
+          <button
+            class="save-button"
+            type="button"
+            (click)="guardarPrescripcion()"
+            [disabled]="soloLectura || (guardandoPrescripcion)">
+            <i class="bx bx-save"></i>
+            {{ guardandoPrescripcion ? 'Guardando...' : (formulario.id ? 'Actualizar prescripción' : 'Guardar prescripción') }}
+          </button>
+
+          <button
+            class="clear-button"
+            type="button"
+            (click)="limpiarFormularioPrescripcion()"
+            [disabled]="guardandoPrescripcion">
+            <i class="bx bx-eraser"></i>
+            Limpiar
+          </button>
+
+          <button
+            class="cancel-button"
+            type="button"
+            (click)="cancelarEdicion()"
+            [disabled]="guardandoPrescripcion">
+            <i class="bx bx-x-circle"></i>
+            {{ formulario.id ? 'Cancelar edición' : 'Cancelar' }}
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+    <aside class="list-panel">
+
+      <div class="list-card">
+        <div class="list-header">
+          <div>
+            <h4>Prescripciones registradas</h4>
+            <p>Tratamiento indicado durante esta atención.</p>
+          </div>
+
+          <span>{{ prescripciones.length }}</span>
+        </div>
+
+        <div class="empty-state" *ngIf="prescripciones.length === 0 && !cargandoPrescripciones">
+          <div>
+            <i class="bx bx-capsule"></i>
+          </div>
+
+          <strong>Sin prescripciones registradas</strong>
+          <p>Puede agregar tratamiento o continuar a exámenes si no aplica medicación.</p>
+        </div>
+
+        <div class="loading-state" *ngIf="cargandoPrescripciones">
+          Cargando prescripciones...
+        </div>
+
+        <div
+          class="prescription-item"
+          *ngFor="let prescripcion of prescripciones; trackBy: trackByPrescripcion"
+          [ngClass]="obtenerClasePrescripcion(prescripcion)">
+
+          <div class="prescription-main">
+            <div class="prescription-icon">
+              <i class="bx bx-capsule"></i>
+            </div>
+
+            <div>
+              <strong>{{ prescripcion.medicamento }}</strong>
+
+              <small>
+                {{ prescripcion.dosis }}
+                · {{ prescripcion.viaAdministracion }}
+                · {{ prescripcion.frecuencia }}
+              </small>
+
+              <div class="badges">
+                <span *ngIf="prescripcion.administrarAhora" class="badge-now">
+                  Administrar ahora
+                </span>
+
+                <span *ngIf="prescripcion.esUrgente" class="badge-urgent">
+                  Urgente
+                </span>
+
+                <span class="badge-state">
+                  {{ prescripcion.estado || 'Activa' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p *ngIf="prescripcion.presentacion">
+            <strong>Presentación:</strong> {{ prescripcion.presentacion }}
+          </p>
+
+          <p *ngIf="prescripcion.duracion || prescripcion.cantidad">
+            <strong>Duración/cantidad:</strong>
+            {{ prescripcion.duracion || 'Sin duración' }}
+            <span *ngIf="prescripcion.cantidad"> · {{ prescripcion.cantidad }}</span>
+          </p>
+
+          <p *ngIf="prescripcion.indicaciones">
+            {{ prescripcion.indicaciones }}
+          </p>
+
+          <small class="date-text">
+            {{ formatearFecha(prescripcion.fechaRegistro) }}
+          </small>
+
+          <div class="item-actions">
+            <button [disabled]="soloLectura" type="button" (click)="editarPrescripcion(prescripcion)">
+              <i class="bx bx-edit"></i>
+              Editar
+            </button>
+
+            <button [disabled]="soloLectura"
+              type="button"
+              class="danger-button"
+              *ngIf="puedeEliminarPrescripcion(prescripcion)"
+              (click)="eliminarPrescripcion(prescripcion)">
+              <i class="bx bx-trash"></i>
+              Eliminar
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+</section>
+
+<ng-template #sinAtencion>
+  <section class="module-placeholder">
+    <div class="empty-care-card">
+      <div class="empty-care-icon">
+        <i class="bx bx-capsule"></i>
+      </div>
+
+      <h2>Primero active una atención</h2>
+
+      <p>
+        Para registrar prescripciones, primero debe abrir una atención activa.
+        Puede crearla desde Pacientes o abrir una atención existente desde Inicio.
+      </p>
+
+      <div class="empty-care-actions">
+        <button class="empty-action-button" type="button" (click)="irA('pacientes')">
+          <strong>
+            <i class="bx bxs-user-account"></i>
+            Ir a Pacientes
+          </strong>
+          <span>Busque o registre un paciente y cree una atención.</span>
+        </button>
+
+        <button class="empty-action-button" type="button" (click)="irA('inicio')">
+          <strong>
+            <i class="bx bx-home"></i>
+            Ir a Inicio
+          </strong>
+          <span>Abra una atención activa ya registrada.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</ng-template>

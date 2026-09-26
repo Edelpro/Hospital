@@ -1,0 +1,163 @@
+<section class="login-page">
+
+  <div class="login-container" [class.active]="modoRegistro">
+
+    <!-- FORMULARIO LOGIN -->
+    <div class="form-box login" [attr.inert]="modoRegistro ? '' : null">
+      <form novalidate (ngSubmit)="iniciarSesion()">
+
+        <div class="form-title">
+          <h1>Iniciar sesión</h1>
+          <p>Acceso al sistema HCU 008 Emergencia</p>
+        </div>
+
+        <div class="input-box">
+          <input
+            type="email"
+            name="correo" aria-label="Correo institucional"
+            placeholder="Correo institucional"
+            [(ngModel)]="correo"
+            autocomplete="username">
+
+          <i class="bx bx-user"></i>
+        </div>
+
+        <div class="input-box">
+          <input
+            [type]="mostrarClave ? 'text' : 'password'"
+            name="clave" aria-label="Contraseña"
+            placeholder="Contraseña"
+            [(ngModel)]="clave"
+            autocomplete="current-password">
+
+          <button type="button" class="password-toggle"
+            [attr.aria-label]="mostrarClave ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.aria-pressed]="mostrarClave" (click)="alternarClave()">
+            {{ mostrarClave ? 'Ocultar' : 'Ver' }}
+          </button>
+        </div>
+
+        <div class="forgot-link">
+          <span>¿Olvidaste tu contraseña? Solicita al administrador que la restablezca.</span>
+        </div>
+
+        <div class="error-box" role="alert" *ngIf="mensajeError">
+          {{ mensajeError }}
+        </div>
+
+        <button type="submit" class="btn" [disabled]="cargando">
+          {{ cargando ? 'Ingresando...' : 'Entrar al sistema' }}
+        </button>
+
+      </form>
+    </div>
+
+    <!-- FORMULARIO SOLICITUD DE ACCESO -->
+    <div class="form-box register" [attr.inert]="!modoRegistro ? '' : null">
+      <form novalidate (ngSubmit)="enviarSolicitudRegistro()">
+
+        <div class="form-title">
+          <div class="mini-logo">
+            <i class="bx bx-user-plus"></i>
+          </div>
+
+          <h1>Solicitar acceso</h1>
+          <p>El administrador aprobará el usuario</p>
+        </div>
+
+        <div class="input-box">
+          <input
+            type="text"
+            name="registroNombres" aria-label="Nombres y apellidos"
+            placeholder="Nombres y apellidos"
+            [(ngModel)]="registroNombres"
+            autocomplete="name">
+
+          <i class="bx bx-id-card"></i>
+        </div>
+
+        <div class="input-box">
+          <input
+            type="email"
+            name="registroCorreo" aria-label="Correo institucional"
+            placeholder="Correo institucional"
+            [(ngModel)]="registroCorreo"
+            autocomplete="email">
+
+          <i class="bx bx-envelope"></i>
+        </div>
+
+        <div class="input-box">
+          <select name="registroRol" aria-label="Rol solicitado" [(ngModel)]="registroRol">
+            <option value="Doctor">Doctor</option>
+          </select>
+
+          <i class="bx bx-shield-quarter"></i>
+        </div>
+
+        <div class="info-box">
+          La solicitud será enviada al administrador para revisión y aprobación.
+        </div>
+
+        <div
+          class="success-box" role="status"
+          *ngIf="mensajeRegistro"
+          [class.error-box]="mensajeRegistro.includes('Ingrese') || mensajeRegistro.includes('existe') || mensajeRegistro.includes('No se pudo')">
+          {{ mensajeRegistro }}
+        </div>
+
+        <button type="submit" class="btn" [disabled]="enviandoSolicitud">
+          {{ enviandoSolicitud ? 'Enviando solicitud...' : 'Enviar solicitud' }}
+        </button>
+
+      </form>
+    </div>
+
+    <!-- PANEL ANIMADO -->
+    <div class="toggle-box">
+
+      <div class="toggle-panel toggle-left" [attr.inert]="modoRegistro ? '' : null">
+
+        <img
+          class="login-illustration"
+          src="assets/login/medico-dashboard.png"
+          alt="Sistema médico HCU 008">
+
+        <div class="hospital-mark">
+          <i class="bx bx-clinic"></i>
+        </div>
+
+        <h1>Hola, bienvenido</h1>
+        <p>Ingresa para continuar con el flujo clínico de emergencia.</p>
+
+        <button type="button" class="btn register-btn" (click)="activarRegistro()">
+          Solicitar acceso
+        </button>
+
+      </div>
+
+      <div class="toggle-panel toggle-right" [attr.inert]="!modoRegistro ? '' : null">
+
+        <img
+          class="login-illustration"
+          src="assets/login/medico-dashboard.png"
+          alt="Acceso HCU 008">
+
+        <div class="hospital-mark">
+          <i class="bx bx-log-in-circle"></i>
+        </div>
+
+        <h1>¿Ya tienes cuenta?</h1>
+        <p>Vuelve al inicio de sesión para entrar al sistema.</p>
+
+        <button type="button" class="btn login-btn" (click)="activarLogin()">
+          Iniciar sesión
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
