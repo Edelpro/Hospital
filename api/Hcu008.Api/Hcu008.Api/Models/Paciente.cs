@@ -20,5 +20,7 @@ public class Paciente
   public string? Canton { get; set; }
   public string? Parroquia { get; set; }
 
+  public int? RegistradoPorUsuarioId { get; set; }
+
   public ICollection<Atencion> Atenciones { get; set; } = new List<Atencion>();
 }

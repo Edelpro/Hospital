@@ -7,6 +7,8 @@ namespace Hcu008.Api.Data;
 public class Hcu008DbContext : DbContext
 {
   private readonly IHttpContextAccessor? httpContext;
+  private int UsuarioActualId => int.TryParse(httpContext?.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+  private bool EsAdministradorActual => string.Equals(httpContext?.HttpContext?.User.FindFirstValue(ClaimTypes.Role), "Admin", StringComparison.OrdinalIgnoreCase);
   public Hcu008DbContext(DbContextOptions<Hcu008DbContext> options, IHttpContextAccessor? httpContext = null) : base(options)
   {
     this.httpContext = httpContext;
@@ -14,6 +16,7 @@ public class Hcu008DbContext : DbContext
 
   
   public DbSet<RegistroAuditoria> RegistrosAuditoria => Set<RegistroAuditoria>();
+  public DbSet<RegistroAcceso> RegistrosAcceso => Set<RegistroAcceso>();
   public DbSet<Paciente> Pacientes => Set<Paciente>();
   public DbSet<Atencion> Atenciones => Set<Atencion>();
   public DbSet<Triaje> Triajes => Set<Triaje>();
@@ -24,6 +27,7 @@ public class Hcu008DbContext : DbContext
   public DbSet<Examen> Examenes => Set<Examen>();
   public DbSet<Egreso> Egresos => Set<Egreso>();
   public DbSet<CatalogoItem> CatalogoItems => Set<CatalogoItem>();
+  public DbSet<PlantillaClinica> PlantillasClinicas => Set<PlantillaClinica>();
 
   public DbSet<UsuarioSistema> UsuariosSistema => Set<UsuarioSistema>();
   public DbSet<SolicitudAcceso> SolicitudesAcceso => Set<SolicitudAcceso>();
@@ -35,7 +39,7 @@ public class Hcu008DbContext : DbContext
     var actorId = 0;
     var auditar = actor?.Identity?.IsAuthenticated == true && int.TryParse(actor.FindFirstValue(ClaimTypes.NameIdentifier), out actorId);
     var cambios = ChangeTracker.Entries()
-      .Where(e => e.Entity is not RegistroAuditoria && e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+      .Where(e => e.Entity is not RegistroAuditoria && e.Entity is not RegistroAcceso && e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
       .Select(e => new { Entry = e, State = e.State, Campos = string.Join(", ", e.Properties.Where(p => !p.Metadata.IsPrimaryKey() && (e.State != EntityState.Modified || p.IsModified)).Select(p => p.Metadata.Name == "ClaveHash" ? "Credencial" : p.Metadata.Name)) }).ToList();
     var affected = ChangeTracker.Entries()
         .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
@@ -85,6 +89,24 @@ public class Hcu008DbContext : DbContext
       entity.HasIndex(a => new { a.AtencionId, a.FechaUtc });
     });
 
+    modelBuilder.Entity<RegistroAcceso>(entity => {
+      entity.ToTable("RegistrosAcceso");
+      entity.HasIndex(a => a.FechaUtc);
+      entity.HasIndex(a => new { a.UsuarioId, a.FechaUtc });
+      entity.HasIndex(a => new { a.Exitoso, a.FechaUtc });
+    });
+
+    modelBuilder.Entity<PlantillaClinica>(entity =>
+    {
+      entity.HasKey(p => p.Id);
+      entity.Property(p => p.Modulo).IsRequired().HasMaxLength(40);
+      entity.Property(p => p.Nombre).IsRequired().HasMaxLength(80);
+      entity.Property(p => p.ContenidoJson).IsRequired().HasMaxLength(12000);
+      entity.Property(p => p.ClaseColor).HasMaxLength(40);
+      entity.HasIndex(p => new { p.Modulo, p.Nombre }).IsUnique();
+      entity.HasIndex(p => new { p.Modulo, p.Activo });
+    });
+
     modelBuilder.Entity<Paciente>(entity =>
     {
       entity.HasKey(p => p.Id);
@@ -122,6 +144,14 @@ public class Hcu008DbContext : DbContext
 
       entity.Property(p => p.Parroquia)
           .HasMaxLength(80);
+
+      entity.HasIndex(p => p.RegistradoPorUsuarioId);
+
+      entity.HasQueryFilter(p =>
+          EsAdministradorActual ||
+          (UsuarioActualId > 0 &&
+           (p.RegistradoPorUsuarioId == UsuarioActualId ||
+            p.Atenciones.Any(a => a.ResponsableUsuarioId == UsuarioActualId))));
 
       entity.HasMany(p => p.Atenciones)
           .WithOne(a => a.Paciente)
@@ -164,18 +194,24 @@ public class Hcu008DbContext : DbContext
           .IsRequired()
           .HasMaxLength(40);
 
+      entity.HasQueryFilter(a =>
+          EsAdministradorActual ||
+          (UsuarioActualId > 0 && a.ResponsableUsuarioId == UsuarioActualId));
+
       entity.HasOne(a => a.Triaje)
           .WithOne(t => t.Atencion)
           .HasForeignKey<Triaje>(t => t.AtencionId)
           .OnDelete(DeleteBehavior.Cascade);
 
       entity.HasIndex(a => a.PacienteId);
+      entity.HasIndex(a => a.ResponsableUsuarioId);
       entity.HasIndex(a => a.Estado);
       entity.HasIndex(a => a.FechaIngreso);
     });
 
     modelBuilder.Entity<Triaje>(entity =>
     {
+      entity.HasQueryFilter(t => EsAdministradorActual || (UsuarioActualId > 0 && t.Atencion!.ResponsableUsuarioId == UsuarioActualId));
       entity.HasKey(t => t.Id);
 
       entity.Property(t => t.Prioridad)
@@ -227,6 +263,7 @@ public class Hcu008DbContext : DbContext
 
     modelBuilder.Entity<EvaluacionMedica>(entity =>
     {
+      entity.HasQueryFilter(e => EsAdministradorActual || (UsuarioActualId > 0 && e.Atencion!.ResponsableUsuarioId == UsuarioActualId));
       entity.ToTable("EvaluacionesMedicas");
 
       entity.HasKey(e => e.Id);
@@ -314,6 +351,7 @@ public class Hcu008DbContext : DbContext
 
     modelBuilder.Entity<Diagnostico>(entity =>
     {
+      entity.HasQueryFilter(d => EsAdministradorActual || (UsuarioActualId > 0 && d.Atencion!.ResponsableUsuarioId == UsuarioActualId));
       entity.ToTable("Diagnosticos");
 
       entity.HasKey(d => d.Id);
@@ -348,6 +386,7 @@ public class Hcu008DbContext : DbContext
 
     modelBuilder.Entity<Prescripcion>(entity =>
     {
+      entity.HasQueryFilter(p => EsAdministradorActual || (UsuarioActualId > 0 && p.Atencion!.ResponsableUsuarioId == UsuarioActualId));
       entity.HasKey(p => p.Id);
 
       entity.Property(p => p.Medicamento)
@@ -393,6 +432,7 @@ public class Hcu008DbContext : DbContext
 
     modelBuilder.Entity<Evolucion>(entity =>
     {
+      entity.HasQueryFilter(e => EsAdministradorActual || (UsuarioActualId > 0 && e.Atencion!.ResponsableUsuarioId == UsuarioActualId));
       entity.HasKey(e => e.Id);
 
       entity.Property(e => e.TipoEvolucion)
@@ -438,6 +478,7 @@ public class Hcu008DbContext : DbContext
 
     modelBuilder.Entity<Examen>(entity =>
     {
+      entity.HasQueryFilter(e => EsAdministradorActual || (UsuarioActualId > 0 && e.Atencion!.ResponsableUsuarioId == UsuarioActualId));
       entity.HasKey(e => e.Id);
 
       entity.Property(e => e.TipoExamen)
@@ -476,6 +517,7 @@ public class Hcu008DbContext : DbContext
 
     modelBuilder.Entity<Egreso>(entity =>
     {
+      entity.HasQueryFilter(e => EsAdministradorActual || (UsuarioActualId > 0 && e.Atencion!.ResponsableUsuarioId == UsuarioActualId));
       entity.HasKey(e => e.Id);
 
       entity.Property(e => e.TipoEgreso)

@@ -34,6 +34,7 @@ type PlantillaRapida =
   | 'riesgoQuirurgico';
 
 type VistaDestinoEvaluacion = 'inicio' | 'pacientes';
+type VistaCuerpo = 'izquierda' | 'frontal' | 'derecha';
 
 interface PlantillaRapidaItem {
   id: PlantillaRapida;
@@ -106,6 +107,21 @@ export class EvaluacionMedica implements OnInit, OnChanges {
 
   antecedentesAbiertos = false;
   sistemaExamenActivo: SistemaExamen = 'cardiopulmonar';
+  vistaCuerpo: VistaCuerpo = 'frontal';
+  readonly imagenesCuerpo: Record<VistaCuerpo, { src: string; alt: string }> = {
+    izquierda: {
+      src: 'assets/clinical-body-left.png',
+      alt: 'Perfil corporal izquierdo para seleccionar la zona del examen'
+    },
+    frontal: {
+      src: 'assets/clinical-anatomy-front.png',
+      alt: 'Figura anatómica frontal para seleccionar la zona del examen'
+    },
+    derecha: {
+      src: 'assets/clinical-body-right.png',
+      alt: 'Perfil corporal derecho para seleccionar la zona del examen'
+    }
+  };
 
   sistemasExamen: { id: SistemaExamen; etiqueta: string }[] = [
     { id: 'cabezaCuello', etiqueta: 'Cabeza y cuello' },
@@ -378,6 +394,10 @@ export class EvaluacionMedica implements OnInit, OnChanges {
 
   irA(modulo: VistaDestinoEvaluacion): void {
     this.irModulo.emit(modulo);
+  }
+
+  cambiarVistaCuerpo(vista: VistaCuerpo): void {
+    this.vistaCuerpo = vista;
   }
 
   crearEvaluacionVacia(atencionId: number): EvaluacionMedicaModel {

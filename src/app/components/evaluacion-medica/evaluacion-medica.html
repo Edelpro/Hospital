@@ -116,6 +116,7 @@
             <label>
               Estado general
               <select [(ngModel)]="evaluacion.estadoGeneral">
+                <option [ngValue]="null" disabled>Seleccione una opción</option>
                 <option *ngFor="let opcion of estadosGenerales" [ngValue]="opcion">
                   {{ opcion }}
                 </option>
@@ -125,6 +126,7 @@
             <label>
               Conciencia
               <select [(ngModel)]="evaluacion.estadoConciencia">
+                <option [ngValue]="null" disabled>Seleccione una opción</option>
                 <option *ngFor="let opcion of estadosConciencia" [ngValue]="opcion">
                   {{ opcion }}
                 </option>
@@ -134,6 +136,7 @@
             <label>
               Hidratación
               <select [(ngModel)]="evaluacion.hidratacion">
+                <option [ngValue]="null" disabled>Seleccione una opción</option>
                 <option *ngFor="let opcion of opcionesHidratacion" [ngValue]="opcion">
                   {{ opcion }}
                 </option>
@@ -143,6 +146,7 @@
             <label>
               Coloración
               <select [(ngModel)]="evaluacion.coloracion">
+                <option [ngValue]="null" disabled>Seleccione una opción</option>
                 <option *ngFor="let opcion of opcionesColoracion" [ngValue]="opcion">
                   {{ opcion }}
                 </option>
@@ -152,6 +156,7 @@
             <label>
               Dolor actual
               <select [(ngModel)]="evaluacion.dolorActual">
+                <option [ngValue]="null" disabled>Seleccione una opción</option>
                 <option *ngFor="let opcion of opcionesDolor" [ngValue]="opcion">
                   {{ opcion }}
                 </option>
@@ -161,6 +166,7 @@
             <label>
               Riesgo clínico
               <select [(ngModel)]="evaluacion.riesgoClinico">
+                <option [ngValue]="null" disabled>Seleccione una opción</option>
                 <option *ngFor="let opcion of opcionesRiesgoClinico" [ngValue]="opcion">
                   {{ opcion }}
                 </option>
@@ -170,6 +176,7 @@
             <label>
               Conducta inicial
               <select [(ngModel)]="evaluacion.conductaInicial">
+                <option [ngValue]="null" disabled>Seleccione una opción</option>
                 <option *ngFor="let opcion of opcionesConductaInicial" [ngValue]="opcion">
                   {{ opcion }}
                 </option>
@@ -241,8 +248,28 @@
           <div class="physical-layout">
 
             <div class="body-panel">
-              <div class="body-silhouette">
-                <img src="assets/clinical-anatomy-front.png" alt="Figura anatómica frontal para seleccionar la zona del examen">
+              <div class="body-view-header">
+                <span><i class="bx bx-cube-alt" aria-hidden="true"></i> Mapa corporal 3D</span>
+                <div class="body-view-switch" role="group" aria-label="Orientación del cuerpo humano">
+                  <button type="button" aria-label="Mostrar perfil corporal izquierdo"
+                    [class.active]="vistaCuerpo === 'izquierda'" [attr.aria-pressed]="vistaCuerpo === 'izquierda'"
+                    (click)="cambiarVistaCuerpo('izquierda')">Izq.</button>
+                  <button type="button" aria-label="Mostrar cuerpo de frente"
+                    [class.active]="vistaCuerpo === 'frontal'" [attr.aria-pressed]="vistaCuerpo === 'frontal'"
+                    (click)="cambiarVistaCuerpo('frontal')">Frente</button>
+                  <button type="button" aria-label="Mostrar perfil corporal derecho"
+                    [class.active]="vistaCuerpo === 'derecha'" [attr.aria-pressed]="vistaCuerpo === 'derecha'"
+                    (click)="cambiarVistaCuerpo('derecha')">Der.</button>
+                </div>
+              </div>
+
+              <div class="body-stage" [ngClass]="'view-' + vistaCuerpo">
+                <div class="body-silhouette">
+                <img
+                  [src]="imagenesCuerpo[vistaCuerpo].src"
+                  [alt]="imagenesCuerpo[vistaCuerpo].alt"
+                  width="1024"
+                  height="1536">
 
                 <button
                   class="body-marker marker-head"
@@ -285,7 +312,13 @@
                   [class.active]="sistemaExamenActivo === 'extremidades'"
                   (click)="seleccionarSistemaExamen('extremidades')">
                 </button>
+                </div>
               </div>
+
+              <p class="body-zone-state" aria-live="polite">
+                <span>Zona seleccionada</span>
+                <strong>{{ obtenerEtiquetaSistemaActivo() }}</strong>
+              </p>
             </div>
 
             <div class="physical-content">

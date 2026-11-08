@@ -4,6 +4,7 @@ using Hcu008.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Hcu008.Api.Controllers;
 
@@ -21,6 +22,7 @@ public class SolicitudesAccesoController : ControllerBase
 
   [HttpPost]
   [AllowAnonymous]
+  [EnableRateLimiting("public-request")]
   public async Task<ActionResult> CrearSolicitud(SolicitudAccesoCrearRequest request)
   {
     request.Nombres = (request.Nombres ?? string.Empty).Trim();

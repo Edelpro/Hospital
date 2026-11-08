@@ -9,7 +9,8 @@ import { EvolucionService } from '../../services/evolucion';
 import { CatalogoService } from '../../services/catalogo';
 import { AuthService } from '../../services/auth';
 import { UiMessageService } from '../../shared/ui-message.service';
-import { cargarPlantillasLocales, guardarPlantillasLocales } from '../../shared/plantillas-locales';
+import { PlantillaClinicaService } from '../../services/plantilla-clinica.service';
+import { PlantillaClinica } from '../../models/plantilla-clinica.model';
 
 type VistaDestinoEvoluciones = 'inicio' | 'pacientes' | 'egreso';
 
@@ -28,7 +29,6 @@ interface PlantillaEvolucion {
   esCritica: boolean;
   clase: string;
 }
-
 @Component({
   selector: 'app-evoluciones',
   imports: [CommonModule, FormsModule],
@@ -72,9 +72,9 @@ export class Evoluciones implements OnInit, OnChanges {
   ];
 
   formulario: Evolucion = this.crearFormularioVacio(0);
-  nombreNuevaPlantilla = '';
+  plantillaSeleccionada = '';
 
-  plantillas: PlantillaEvolucion[] = [
+  private readonly plantillasBase: PlantillaEvolucion[] = [
     {
       id: 'estable',
       titulo: 'Paciente estable',
@@ -152,31 +152,45 @@ export class Evoluciones implements OnInit, OnChanges {
     }
   ];
 
+  plantillas: PlantillaEvolucion[] = [...this.plantillasBase];
+
   constructor(
     private evolucionService: EvolucionService,
     private catalogoService: CatalogoService,
+    private plantillaClinicaService: PlantillaClinicaService,
     private authService: AuthService,
     private uiMessageService: UiMessageService
   ) {}
 
   ngOnInit(): void {
-    this.plantillas.push(...cargarPlantillasLocales<PlantillaEvolucion>('hcu008-plantillas-evoluciones'));
+    this.cargarPlantillasCompartidas();
+    this.plantillaClinicaService.cambios$.subscribe(modulo => {
+      if (!modulo || modulo === 'Evoluciones') this.cargarPlantillasCompartidas();
+    });
     this.cargarCatalogosEvoluciones();
   }
 
-  crearPlantillaPersonalizada(): void {
-    if (!this.formulario.objetivo?.trim() || !this.formulario.analisis?.trim() || !this.formulario.plan?.trim()) {
-      this.uiMessageService.advertencia('Datos requeridos', 'Complete objetivo, análisis y plan antes de crear la plantilla.'); return;
+
+  cargarPlantillasCompartidas(): void {
+    this.plantillaClinicaService.obtenerActivas('Evoluciones').subscribe({
+      next: plantillas => {
+        const compartidas = plantillas.map(p => this.convertirPlantilla(p)).filter((p): p is PlantillaEvolucion => !!p);
+        this.plantillas = [...this.plantillasBase, ...compartidas];
+      },
+      error: () => {
+        this.plantillas = [...this.plantillasBase];
+        this.uiMessageService.advertencia('Plantillas no disponibles', 'Se conservaron las plantillas rápidas predeterminadas porque no fue posible cargar las plantillas compartidas.');
+      }
+    });
+  }
+
+  convertirPlantilla(plantilla: PlantillaClinica): PlantillaEvolucion | null {
+    try {
+      const contenido = JSON.parse(plantilla.contenidoJson);
+      if (!contenido.objetivo?.trim() || !contenido.analisis?.trim() || !contenido.plan?.trim()) return null;
+      return { id: `db-${plantilla.id}`, titulo: plantilla.nombre, ...contenido, clase: plantilla.claseColor || 'tpl-green' };
     }
-    const titulo = this.nombreNuevaPlantilla.trim();
-    if (!titulo) {
-      this.uiMessageService.advertencia('Nombre requerido', 'Escriba un nombre para identificar la plantilla.');
-      return;
-    }
-    const plantilla: PlantillaEvolucion = { id: `local-${Date.now()}`, titulo, detalle: this.formulario.condicionPaciente, tipoEvolucion: this.formulario.tipoEvolucion, condicionPaciente: this.formulario.condicionPaciente, subjetivo: this.formulario.subjetivo || '', objetivo: this.formulario.objetivo, analisis: this.formulario.analisis, plan: this.formulario.plan, respuestaTratamiento: this.formulario.respuestaTratamiento || '', requiereReevaluacion: this.formulario.requiereReevaluacion, esCritica: this.formulario.esCritica, clase: this.formulario.esCritica ? 'tpl-red' : 'tpl-green' };
-    const guardadas = cargarPlantillasLocales<PlantillaEvolucion>('hcu008-plantillas-evoluciones'); guardadas.push(plantilla); guardarPlantillasLocales('hcu008-plantillas-evoluciones', guardadas); this.plantillas.push(plantilla);
-    this.nombreNuevaPlantilla = '';
-    this.uiMessageService.exito('Plantilla creada', 'La evolución quedó disponible en plantillas rápidas de este equipo.');
+    catch { return null; }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -331,6 +345,7 @@ export class Evoluciones implements OnInit, OnChanges {
   }
 
   aplicarPlantilla(plantilla: PlantillaEvolucion): void {
+    this.plantillaSeleccionada = plantilla.id;
     this.formulario.tipoEvolucion = this.tiposEvolucion.includes(plantilla.tipoEvolucion)
       ? plantilla.tipoEvolucion
       : this.tiposEvolucion[0] || plantilla.tipoEvolucion;
@@ -354,7 +369,7 @@ export class Evoluciones implements OnInit, OnChanges {
 
     this.uiMessageService.informacion(
       'Plantilla aplicada',
-      'Se agregaron datos base. Puede editar el texto antes de guardar.'
+      `Se cargó “${plantilla.titulo}”. Revise la evolución antes de guardarla.`
     );
   }
 
@@ -408,6 +423,7 @@ export class Evoluciones implements OnInit, OnChanges {
         this.evolucionGuardada.emit(evolucionGuardada);
 
         this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+        this.plantillaSeleccionada = '';
         this.formulario.signosVitalesResumen = this.obtenerSignosVitalesResumen();
         this.aplicarValoresInicialesFormulario();
 
@@ -521,6 +537,7 @@ export class Evoluciones implements OnInit, OnChanges {
 
   cancelarEdicion(): void {
     this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+    this.plantillaSeleccionada = '';
     this.formulario.signosVitalesResumen = this.obtenerSignosVitalesResumen();
     this.aplicarValoresInicialesFormulario();
   }

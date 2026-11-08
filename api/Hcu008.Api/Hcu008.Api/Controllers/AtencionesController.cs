@@ -3,6 +3,7 @@ using Hcu008.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Hcu008.Api.Controllers;
 
@@ -107,6 +108,7 @@ public class AtencionesController : ControllerBase
     NormalizarAtencion(atencion);
 
     atencion.Id = 0;
+    atencion.ResponsableUsuarioId = ObtenerUsuarioActualId();
     atencion.FechaIngreso = DateTime.Now;
     atencion.Estado = "Abierta";
 
@@ -392,5 +394,10 @@ public class AtencionesController : ControllerBase
     var numeros = new string(valor.Where(char.IsDigit).ToArray());
 
     return string.IsNullOrWhiteSpace(numeros) ? null : numeros;
+  }
+
+  private int ObtenerUsuarioActualId()
+  {
+    return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
   }
 }

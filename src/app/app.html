@@ -9,6 +9,7 @@
 
 <app-login
   *ngIf="!usuarioActual"
+  (volverPresentacion)="volverALaPresentacion()"
   (sesionIniciada)="procesarSesionIniciada($event)">
 </app-login>
 
@@ -100,6 +101,15 @@
         (click)="cambiarVista('admin-usuarios')">
         <span class="menu-icon"><i class="bx bx-user-check"></i></span>
         <span>Usuarios</span>
+      </button>
+
+      <button
+        type="button"
+        *ngIf="esAdministrador()"
+        [class.active]="esVista('admin-plantillas')" [attr.aria-current]="esVista('admin-plantillas') ? 'page' : null"
+        (click)="cambiarVista('admin-plantillas')">
+        <span class="menu-icon"><i class="bx bx-bookmark-heart"></i></span>
+        <span>Plantillas</span>
       </button>
 
       <button
@@ -301,6 +311,10 @@
       *ngIf="vistaActiva === 'admin-catalogos' && esAdministrador()"
       (irModulo)="cambiarVista($event)">
     </app-admin-catalogos>
+
+    <app-admin-plantillas
+      *ngIf="vistaActiva === 'admin-plantillas' && esAdministrador()">
+    </app-admin-plantillas>
 
     <app-placeholders
       *ngIf="esModuloTemporal()"

@@ -36,6 +36,7 @@ interface PlantillaEgreso {
   styleUrl: './egreso.css'
 })
 export class Egreso implements OnInit, OnChanges {
+  readonly parentescos = ['Madre', 'Padre', 'Hijo/a', 'Cónyuge', 'Hermano/a', 'Abuelo/a', 'Tutor/a', 'Otro'];
   get soloLectura(): boolean { return this.atencionActual?.estado === 'Cerrada'; }
 
   @Input() atencionActual?: Atencion;
@@ -295,6 +296,10 @@ export class Egreso implements OnInit, OnChanges {
         ? 'Domicilio'
         : this.destinos[0] || '';
     }
+
+    if (!this.formulario.fechaEgreso) {
+      this.formulario.fechaEgreso = this.obtenerFechaLocalActual();
+    }
   }
 
   irA(modulo: VistaDestinoEgreso): void {
@@ -323,7 +328,7 @@ export class Egreso implements OnInit, OnChanges {
       nombreAcompanante: null,
       parentescoAcompanante: null,
       estado: 'Registrado',
-      fechaEgreso: null
+      fechaEgreso: this.obtenerFechaLocalActual()
     };
   }
 
@@ -639,6 +644,40 @@ export class Egreso implements OnInit, OnChanges {
       return false;
     }
 
+    if (!this.formulario.fechaEgreso) {
+      this.formulario.fechaEgreso = this.obtenerFechaLocalActual();
+    }
+
+    const fechaEgreso = new Date(this.formulario.fechaEgreso);
+
+    if (isNaN(fechaEgreso.getTime())) {
+      this.uiMessageService.advertencia(
+        'Fecha no válida',
+        'Revise la fecha y hora de egreso antes de guardar.'
+      );
+      return false;
+    }
+
+    const fechaIngreso = this.atencionActual?.fechaIngreso
+      ? new Date(this.atencionActual.fechaIngreso)
+      : null;
+
+    if (fechaIngreso && !isNaN(fechaIngreso.getTime()) && fechaEgreso < fechaIngreso) {
+      this.uiMessageService.advertencia(
+        'Fecha no válida',
+        'La fecha de egreso no puede ser anterior al ingreso.'
+      );
+      return false;
+    }
+
+    if (fechaEgreso.getTime() > Date.now() + 5 * 60 * 1000) {
+      this.uiMessageService.advertencia(
+        'Fecha no válida',
+        'La fecha de egreso no puede ser futura.'
+      );
+      return false;
+    }
+
     if (!this.formulario.resumenClinico || this.formulario.resumenClinico.length < 10) {
       this.uiMessageService.advertencia(
         'Resumen requerido',
@@ -770,6 +809,13 @@ export class Egreso implements OnInit, OnChanges {
     return local.toISOString().slice(0, 16);
   }
 
+  obtenerFechaLocalActual(): string {
+    const ahora = new Date();
+    const local = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60000);
+
+    return local.toISOString().slice(0, 16);
+  }
+
   trackByPlantilla(index: number, plantilla: PlantillaEgreso): string {
     return plantilla.id || String(index);
   }
@@ -777,6 +823,10 @@ export class Egreso implements OnInit, OnChanges {
   obtenerMensajeError(error: any): string {
     if (error?.error?.errors) {
       const errores = error.error.errors;
+
+      if (errores['$.fechaEgreso'] || errores['FechaEgreso']) {
+        return 'Revise la fecha y hora de egreso antes de guardar.';
+      }
 
       const mensajes = Object.keys(errores)
         .map((campo) => {

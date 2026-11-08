@@ -251,9 +251,21 @@
 }
 
 .frequent-grid {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 4px 8px 8px 4px;
+  scrollbar-color: #6fac91 #edf5f1;
+  scrollbar-width: thin;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 10px;
+}
+
+/* La selección clínica debe prevalecer sobre el color semántico de cada tarjeta. */
+.frequent-grid button.template-selected {
+  border-color: #0f5132 !important;
+  box-shadow: 0 0 0 4px rgba(15, 81, 50, 0.18), 0 12px 24px rgba(15, 81, 50, 0.14) !important;
+  transform: translateY(-2px);
 }
 
 .frequent-grid button {

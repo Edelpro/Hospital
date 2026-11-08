@@ -24,6 +24,8 @@ public class Atencion
 
   public string Estado { get; set; } = "Abierta";
 
+  public int? ResponsableUsuarioId { get; set; }
+
   public Triaje? Triaje { get; set; }
   public Egreso? Egreso { get; set; }
   public EvaluacionMedica? EvaluacionMedica { get; set; }

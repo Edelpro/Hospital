@@ -98,6 +98,8 @@
         type="button"
         *ngFor="let item of examenesFrecuentesFiltrados; trackBy: trackByExamenFrecuente"
         [ngClass]="item.clase"
+        [class.template-selected]="plantillaSeleccionada === clavePlantilla(item)"
+        [attr.aria-pressed]="plantillaSeleccionada === clavePlantilla(item)"
         (click)="seleccionarExamenFrecuente(item)">
         <strong>{{ item.nombreExamen }}</strong>
         <span>{{ item.tipoExamen }} · {{ item.prioridad }}</span>
@@ -137,6 +139,7 @@
           <label>
             Tipo de examen
             <select [(ngModel)]="formulario.tipoExamen">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let tipo of tiposExamen" [ngValue]="tipo">
                 {{ tipo }}
               </option>
@@ -155,6 +158,7 @@
           <label>
             Prioridad
             <select [(ngModel)]="formulario.prioridad">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let prioridad of prioridades" [ngValue]="prioridad">
                 {{ prioridad }}
               </option>
@@ -186,6 +190,7 @@
           <label>
             Estado
             <select [(ngModel)]="formulario.estado">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let estado of estadosExamen" [ngValue]="estado">
                 {{ estado }}
               </option>
@@ -235,16 +240,7 @@
           </span>
         </div>
 
-        <div class="template-save-row">
-          <label>
-            Nombre de la plantilla
-            <input type="text" maxlength="60" placeholder="Ejemplo: Perfil de emergencia" [(ngModel)]="nombreNuevaPlantilla" [disabled]="soloLectura">
-          </label>
-          <small>Complete la solicitud y guárdela como opción rápida para este equipo.</small>
-        </div>
-
         <div class="form-actions">
-          <button class="clear-button" type="button" (click)="crearPlantillaPersonalizada()" [disabled]="soloLectura || guardandoExamen"><i class="bx bx-bookmark-plus"></i> Crear plantilla</button>
           <button
             class="save-button"
             type="button"

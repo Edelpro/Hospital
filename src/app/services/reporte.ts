@@ -2,10 +2,11 @@ import { API_BASE_URL } from './api-base';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Atencion } from '../models/atencion.model';
 
 export interface ReporteAtencion {
   fechaGeneracion: string;
-  atencion: any;
+  atencion: Atencion;
 }
 
 @Injectable({

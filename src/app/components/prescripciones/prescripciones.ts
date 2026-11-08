@@ -9,11 +9,13 @@ import { PrescripcionService } from '../../services/prescripcion';
 import { CatalogoService } from '../../services/catalogo';
 import { AuthService } from '../../services/auth';
 import { UiMessageService } from '../../shared/ui-message.service';
-import { cargarPlantillasLocales, guardarPlantillasLocales } from '../../shared/plantillas-locales';
+import { PlantillaClinicaService } from '../../services/plantilla-clinica.service';
+import { PlantillaClinica } from '../../models/plantilla-clinica.model';
 
 type VistaDestinoPrescripciones = 'inicio' | 'pacientes' | 'examenes';
 
 interface MedicamentoFrecuente {
+  id?: number | string;
   medicamento: string;
   presentacion: string;
   dosis: string;
@@ -25,7 +27,6 @@ interface MedicamentoFrecuente {
   grupo: string;
   clase: string;
 }
-
 @Component({
   selector: 'app-prescripciones',
   imports: [CommonModule, FormsModule],
@@ -89,9 +90,9 @@ export class Prescripciones implements OnInit, OnChanges {
   ];
 
   formulario: Prescripcion = this.crearFormularioVacio(0);
-  nombreNuevaPlantilla = '';
+  plantillaSeleccionada = '';
 
-  medicamentosFrecuentes: MedicamentoFrecuente[] = [
+  private readonly medicamentosFrecuentesBase: MedicamentoFrecuente[] = [
     {
       medicamento: 'Paracetamol',
       presentacion: 'Tableta / ampolla',
@@ -238,31 +239,45 @@ export class Prescripciones implements OnInit, OnChanges {
     }
   ];
 
+  medicamentosFrecuentes: MedicamentoFrecuente[] = [...this.medicamentosFrecuentesBase];
+
   constructor(
     private prescripcionService: PrescripcionService,
     private catalogoService: CatalogoService,
+    private plantillaClinicaService: PlantillaClinicaService,
     private authService: AuthService,
     private uiMessageService: UiMessageService
   ) {}
 
   ngOnInit(): void {
-    this.medicamentosFrecuentes.push(...cargarPlantillasLocales<MedicamentoFrecuente>('hcu008-plantillas-prescripciones'));
+    this.cargarPlantillasCompartidas();
+    this.plantillaClinicaService.cambios$.subscribe(modulo => {
+      if (!modulo || modulo === 'Prescripciones') this.cargarPlantillasCompartidas();
+    });
     this.cargarCatalogosPrescripciones();
   }
 
-  crearPlantillaPersonalizada(): void {
-    if (!this.formulario.medicamento?.trim() || !this.formulario.dosis?.trim()) {
-      this.uiMessageService.advertencia('Datos requeridos', 'Complete medicamento y dosis antes de crear la plantilla.'); return;
+
+  cargarPlantillasCompartidas(): void {
+    this.plantillaClinicaService.obtenerActivas('Prescripciones').subscribe({
+      next: plantillas => {
+        const compartidas = plantillas.map(p => this.convertirPlantilla(p)).filter((p): p is MedicamentoFrecuente => !!p);
+        this.medicamentosFrecuentes = [...this.medicamentosFrecuentesBase, ...compartidas];
+      },
+      error: () => {
+        this.medicamentosFrecuentes = [...this.medicamentosFrecuentesBase];
+        this.uiMessageService.advertencia('Plantillas no disponibles', 'Se conservaron los medicamentos frecuentes predeterminados porque no fue posible cargar las plantillas compartidas.');
+      }
+    });
+  }
+
+  convertirPlantilla(plantilla: PlantillaClinica): MedicamentoFrecuente | null {
+    try {
+      const contenido = JSON.parse(plantilla.contenidoJson);
+      if (!contenido.medicamento?.trim() || !contenido.dosis?.trim()) return null;
+      return { id: `db-${plantilla.id}`, ...contenido, grupo: plantilla.nombre, clase: plantilla.claseColor || 'rx-green' };
     }
-    const grupo = this.nombreNuevaPlantilla.trim();
-    if (!grupo) {
-      this.uiMessageService.advertencia('Nombre requerido', 'Escriba un nombre para identificar la plantilla.');
-      return;
-    }
-    const plantilla: MedicamentoFrecuente = { medicamento: this.formulario.medicamento.trim(), presentacion: this.formulario.presentacion || '', dosis: this.formulario.dosis.trim(), viaAdministracion: this.formulario.viaAdministracion, frecuencia: this.formulario.frecuencia, duracion: this.formulario.duracion, cantidad: this.formulario.cantidad || '', indicaciones: this.formulario.indicaciones || '', grupo, clase: 'rx-green' };
-    const guardadas = cargarPlantillasLocales<MedicamentoFrecuente>('hcu008-plantillas-prescripciones'); guardadas.push(plantilla); guardarPlantillasLocales('hcu008-plantillas-prescripciones', guardadas); this.medicamentosFrecuentes.push(plantilla);
-    this.nombreNuevaPlantilla = '';
-    this.uiMessageService.exito('Plantilla creada', 'La prescripción quedó disponible en medicamentos frecuentes de este equipo.');
+    catch { return null; }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -423,6 +438,7 @@ export class Prescripciones implements OnInit, OnChanges {
   }
 
   seleccionarMedicamentoFrecuente(item: MedicamentoFrecuente): void {
+    this.plantillaSeleccionada = this.clavePlantilla(item);
     this.formulario.medicamento = item.medicamento;
     this.formulario.presentacion = item.presentacion;
     this.formulario.dosis = item.dosis;
@@ -438,7 +454,10 @@ export class Prescripciones implements OnInit, OnChanges {
     this.formulario.duracion = item.duracion;
     this.formulario.cantidad = item.cantidad || null;
     this.formulario.indicaciones = item.indicaciones;
+    this.uiMessageService.informacion('Plantilla aplicada', `Se cargó “${item.grupo}”. Verifique dosis e indicaciones antes de guardar.`);
   }
+
+  clavePlantilla(item: MedicamentoFrecuente): string { return String(item.id || item.medicamento); }
 
   guardarPrescripcion(): void {
     if (this.soloLectura) return;
@@ -490,6 +509,7 @@ export class Prescripciones implements OnInit, OnChanges {
         this.prescripcionGuardada.emit(prescripcionGuardada);
 
         this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+        this.plantillaSeleccionada = '';
         this.aplicarValoresInicialesFormulario();
         this.cargarPrescripciones();
       },
@@ -627,6 +647,7 @@ export class Prescripciones implements OnInit, OnChanges {
 
   cancelarEdicion(): void {
     this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+    this.plantillaSeleccionada = '';
     this.aplicarValoresInicialesFormulario();
   }
 
@@ -723,6 +744,7 @@ export class Prescripciones implements OnInit, OnChanges {
       'Esta acción limpiará los datos ingresados en pantalla. No eliminará prescripciones guardadas.',
       () => {
         this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+        this.plantillaSeleccionada = '';
         this.aplicarValoresInicialesFormulario();
 
         this.uiMessageService.informacion(
@@ -804,7 +826,7 @@ export class Prescripciones implements OnInit, OnChanges {
   }
 
   trackByMedicamentoFrecuente(index: number, medicamento: MedicamentoFrecuente): string {
-    return `${medicamento.medicamento}-${index}`;
+    return String(medicamento.id || medicamento.medicamento || index);
   }
 
   obtenerMensajeError(error: any): string {

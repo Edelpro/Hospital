@@ -8,11 +8,13 @@ import { CatalogoItem } from '../../models/catalogo-item.model';
 import { ExamenService } from '../../services/examen';
 import { CatalogoService } from '../../services/catalogo';
 import { UiMessageService } from '../../shared/ui-message.service';
-import { cargarPlantillasLocales, guardarPlantillasLocales } from '../../shared/plantillas-locales';
+import { PlantillaClinicaService } from '../../services/plantilla-clinica.service';
+import { PlantillaClinica } from '../../models/plantilla-clinica.model';
 
 type VistaDestinoExamenes = 'inicio' | 'pacientes' | 'evoluciones';
 
 interface ExamenFrecuente {
+  id?: number | string;
   tipoExamen: string;
   nombreExamen: string;
   prioridad: string;
@@ -23,7 +25,6 @@ interface ExamenFrecuente {
   grupo: string;
   clase: string;
 }
-
 @Component({
   selector: 'app-examenes',
   imports: [CommonModule, FormsModule],
@@ -52,9 +53,9 @@ export class Examenes implements OnInit, OnChanges {
   estadosExamen: string[] = ['Solicitado', 'Tomado', 'Pendiente resultado', 'Resultado disponible', 'Cancelado'];
 
   formulario: Examen = this.crearFormularioVacio(0);
-  nombreNuevaPlantilla = '';
+  plantillaSeleccionada = '';
 
-  examenesFrecuentes: ExamenFrecuente[] = [
+  private readonly examenesFrecuentesBase: ExamenFrecuente[] = [
     {
       tipoExamen: 'Laboratorio',
       nombreExamen: 'Hemograma completo',
@@ -189,31 +190,45 @@ export class Examenes implements OnInit, OnChanges {
     }
   ];
 
+  examenesFrecuentes: ExamenFrecuente[] = [...this.examenesFrecuentesBase];
+
   constructor(
   private examenService: ExamenService,
   private catalogoService: CatalogoService,
+  private plantillaClinicaService: PlantillaClinicaService,
   private authService: AuthService,
   private uiMessageService: UiMessageService
 ) {}
 
   ngOnInit(): void {
-    this.examenesFrecuentes.push(...cargarPlantillasLocales<ExamenFrecuente>('hcu008-plantillas-examenes'));
+    this.cargarPlantillasCompartidas();
+    this.plantillaClinicaService.cambios$.subscribe(modulo => {
+      if (!modulo || modulo === 'Examenes') this.cargarPlantillasCompartidas();
+    });
     this.cargarCatalogosExamenes();
   }
 
-  crearPlantillaPersonalizada(): void {
-    if (!this.formulario.nombreExamen?.trim() || !this.formulario.indicacionClinica?.trim()) {
-      this.uiMessageService.advertencia('Datos requeridos', 'Complete nombre e indicación clínica antes de crear la plantilla.'); return;
+
+  cargarPlantillasCompartidas(): void {
+    this.plantillaClinicaService.obtenerActivas('Examenes').subscribe({
+      next: plantillas => {
+        const compartidas = plantillas.map(p => this.convertirPlantilla(p)).filter((p): p is ExamenFrecuente => !!p);
+        this.examenesFrecuentes = [...this.examenesFrecuentesBase, ...compartidas];
+      },
+      error: () => {
+        this.examenesFrecuentes = [...this.examenesFrecuentesBase];
+        this.uiMessageService.advertencia('Plantillas no disponibles', 'Se conservaron los exámenes frecuentes predeterminados porque no fue posible cargar las plantillas compartidas.');
+      }
+    });
+  }
+
+  convertirPlantilla(plantilla: PlantillaClinica): ExamenFrecuente | null {
+    try {
+      const contenido = JSON.parse(plantilla.contenidoJson);
+      if (!contenido.nombreExamen?.trim() || !contenido.indicacionClinica?.trim()) return null;
+      return { id: `db-${plantilla.id}`, ...contenido, grupo: plantilla.nombre, clase: plantilla.claseColor || 'ex-green' };
     }
-    const grupo = this.nombreNuevaPlantilla.trim();
-    if (!grupo) {
-      this.uiMessageService.advertencia('Nombre requerido', 'Escriba un nombre para identificar la plantilla.');
-      return;
-    }
-    const plantilla: ExamenFrecuente = { tipoExamen: this.formulario.tipoExamen, nombreExamen: this.formulario.nombreExamen.trim(), prioridad: this.formulario.prioridad, indicacionClinica: this.formulario.indicacionClinica.trim(), observacion: this.formulario.observacion || '', requiereAyuno: this.formulario.requiereAyuno, esUrgente: this.formulario.esUrgente, grupo, clase: 'ex-green' };
-    const guardadas = cargarPlantillasLocales<ExamenFrecuente>('hcu008-plantillas-examenes'); guardadas.push(plantilla); guardarPlantillasLocales('hcu008-plantillas-examenes', guardadas); this.examenesFrecuentes.push(plantilla);
-    this.nombreNuevaPlantilla = '';
-    this.uiMessageService.exito('Plantilla creada', 'El examen quedó disponible en opciones frecuentes de este equipo.');
+    catch { return null; }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -383,6 +398,7 @@ export class Examenes implements OnInit, OnChanges {
   }
 
   seleccionarExamenFrecuente(item: ExamenFrecuente): void {
+    this.plantillaSeleccionada = this.clavePlantilla(item);
     this.formulario.tipoExamen = this.tiposExamen.includes(item.tipoExamen)
       ? item.tipoExamen
       : this.tiposExamen[0] || item.tipoExamen;
@@ -401,7 +417,10 @@ export class Examenes implements OnInit, OnChanges {
     this.formulario.estado = this.estadosExamen.includes('Solicitado')
       ? 'Solicitado'
       : this.estadosExamen[0] || 'Solicitado';
+    this.uiMessageService.informacion('Plantilla aplicada', `Se cargó “${item.grupo}”. Revise la solicitud antes de guardarla.`);
   }
+
+  clavePlantilla(item: ExamenFrecuente): string { return String(item.id || item.nombreExamen); }
 
   limpiarBusquedaExamen(): void {
     this.busquedaExamenFrecuente = '';
@@ -456,6 +475,8 @@ export class Examenes implements OnInit, OnChanges {
         this.examenGuardado.emit(examenGuardado);
 
         this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+        this.plantillaSeleccionada = '';
+        this.busquedaExamenFrecuente = '';
         this.aplicarValoresInicialesFormulario();
         this.cargarExamenes();
       },
@@ -574,6 +595,7 @@ export class Examenes implements OnInit, OnChanges {
 
   cancelarEdicion(): void {
     this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+    this.plantillaSeleccionada = '';
     this.aplicarValoresInicialesFormulario();
   }
 
@@ -639,6 +661,8 @@ export class Examenes implements OnInit, OnChanges {
       'Esta acción limpiará los datos ingresados en pantalla. No eliminará exámenes guardados.',
       () => {
         this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+        this.plantillaSeleccionada = '';
+        this.busquedaExamenFrecuente = '';
         this.aplicarValoresInicialesFormulario();
 
         this.uiMessageService.informacion(
@@ -743,7 +767,7 @@ export class Examenes implements OnInit, OnChanges {
   }
 
   trackByExamenFrecuente(index: number, examen: ExamenFrecuente): string {
-    return `${examen.nombreExamen}-${index}`;
+    return String(examen.id || examen.nombreExamen || index);
   }
 
   puedeEliminarExamen(examen: Examen): boolean {

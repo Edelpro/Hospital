@@ -10,17 +10,21 @@ import { CatalogoItem } from '../../models/catalogo-item.model';
 import { DiagnosticoService } from '../../services/diagnostico';
 import { CatalogoService } from '../../services/catalogo';
 import { UiMessageService } from '../../shared/ui-message.service';
-import { cargarPlantillasLocales, guardarPlantillasLocales } from '../../shared/plantillas-locales';
+import { PlantillaClinicaService } from '../../services/plantilla-clinica.service';
+import { PlantillaClinica } from '../../models/plantilla-clinica.model';
 
 type VistaDestinoDiagnosticos = 'inicio' | 'pacientes' | 'prescripciones' | 'mensajeria';
 
 interface DiagnosticoFrecuente {
+  id?: number | string;
   codigo: string;
   descripcion: string;
   grupo: string;
   clase: string;
+  tipoDiagnostico?: string;
+  condicion?: string;
+  observacion?: string | null;
 }
-
 @Component({
   selector: 'app-diagnosticos',
   imports: [CommonModule, FormsModule],
@@ -48,9 +52,9 @@ export class Diagnosticos implements OnInit, OnChanges {
   condicionesDiagnostico: string[] = ['Principal', 'Secundario'];
 
   formulario: Diagnostico = this.crearFormularioVacio(0);
-  nombreNuevaPlantilla = '';
+  plantillaSeleccionada = '';
 
-  diagnosticosFrecuentes: DiagnosticoFrecuente[] = [
+  private readonly diagnosticosFrecuentesBase: DiagnosticoFrecuente[] = [
     { codigo: 'R10.0', descripcion: 'Abdomen agudo', grupo: 'Abdomen', clase: 'dx-orange' },
     { codigo: 'R10.4', descripcion: 'Otros dolores abdominales y los no especificados', grupo: 'Abdomen', clase: 'dx-orange' },
     { codigo: 'R07.4', descripcion: 'Dolor en el pecho, no especificado', grupo: 'Cardio', clase: 'dx-red' },
@@ -68,33 +72,52 @@ export class Diagnosticos implements OnInit, OnChanges {
     { codigo: 'A09', descripcion: 'Diarrea y gastroenteritis de presunto origen infeccioso', grupo: 'Digestivo', clase: 'dx-blue' }
   ];
 
+  diagnosticosFrecuentes: DiagnosticoFrecuente[] = [...this.diagnosticosFrecuentesBase];
+
   constructor(
     private diagnosticoService: DiagnosticoService,
     private catalogoService: CatalogoService,
+    private plantillaClinicaService: PlantillaClinicaService,
     private uiMessageService: UiMessageService
   ) {}
 
   ngOnInit(): void {
-    this.diagnosticosFrecuentes.push(...cargarPlantillasLocales<DiagnosticoFrecuente>('hcu008-plantillas-diagnosticos'));
+    this.cargarPlantillasCompartidas();
+    this.plantillaClinicaService.cambios$.subscribe(modulo => {
+      if (!modulo || modulo === 'Diagnosticos') this.cargarPlantillasCompartidas();
+    });
     this.cargarCatalogosDiagnosticos();
   }
 
-  crearPlantillaPersonalizada(): void {
-    this.normalizarFormulario();
-    if (!this.formulario.codigoCie10 || !this.formulario.descripcionCie10) {
-      this.uiMessageService.advertencia('Datos requeridos', 'Complete código y descripción antes de crear la plantilla.');
-      return;
-    }
-    const nombre = this.nombreNuevaPlantilla.trim();
-    if (!nombre) {
-      this.uiMessageService.advertencia('Nombre requerido', 'Escriba un nombre para identificar la plantilla.');
-      return;
-    }
-    const plantilla: DiagnosticoFrecuente = { codigo: this.formulario.codigoCie10, descripcion: this.formulario.descripcionCie10, grupo: nombre, clase: 'dx-green' };
-    const guardadas = cargarPlantillasLocales<DiagnosticoFrecuente>('hcu008-plantillas-diagnosticos');
-    guardadas.push(plantilla); guardarPlantillasLocales('hcu008-plantillas-diagnosticos', guardadas); this.diagnosticosFrecuentes.push(plantilla);
-    this.nombreNuevaPlantilla = '';
-    this.uiMessageService.exito('Plantilla creada', 'El diagnóstico quedó disponible en opciones rápidas de este equipo.');
+
+  cargarPlantillasCompartidas(): void {
+    this.plantillaClinicaService.obtenerActivas('Diagnosticos').subscribe({
+      next: plantillas => {
+        const compartidas = plantillas.map(p => this.convertirPlantilla(p)).filter((p): p is DiagnosticoFrecuente => !!p);
+        this.diagnosticosFrecuentes = [...this.diagnosticosFrecuentesBase, ...compartidas];
+      },
+      error: () => {
+        this.diagnosticosFrecuentes = [...this.diagnosticosFrecuentesBase];
+        this.uiMessageService.advertencia('Plantillas no disponibles', 'Se conservaron los diagnósticos frecuentes predeterminados porque no fue posible cargar las plantillas compartidas.');
+      }
+    });
+  }
+
+  convertirPlantilla(plantilla: PlantillaClinica): DiagnosticoFrecuente | null {
+    try {
+      const contenido = JSON.parse(plantilla.contenidoJson);
+      if (!contenido.codigo?.trim() || !contenido.descripcion?.trim()) return null;
+      return {
+        id: `db-${plantilla.id}`,
+        codigo: contenido.codigo,
+        descripcion: contenido.descripcion,
+        grupo: plantilla.nombre,
+        clase: plantilla.claseColor || 'dx-green',
+        tipoDiagnostico: contenido.tipoDiagnostico,
+        condicion: contenido.condicion,
+        observacion: contenido.observacion
+      };
+    } catch { return null; }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -226,22 +249,30 @@ export class Diagnosticos implements OnInit, OnChanges {
   }
 
   seleccionarDiagnosticoFrecuente(item: DiagnosticoFrecuente): void {
+    this.plantillaSeleccionada = this.clavePlantilla(item);
     this.formulario.codigoCie10 = item.codigo;
     this.formulario.descripcionCie10 = item.descripcion;
 
-    if (this.obtenerTotalPrincipales() > 0 && this.condicionesDiagnostico.includes('Secundario')) {
+    if (item.condicion && this.condicionesDiagnostico.includes(item.condicion)) {
+      this.formulario.condicion = item.condicion;
+    } else if (this.obtenerTotalPrincipales() > 0 && this.condicionesDiagnostico.includes('Secundario')) {
       this.formulario.condicion = 'Secundario';
     } else {
       this.formulario.condicion = 'Principal';
     }
 
-    this.formulario.tipoDiagnostico = 'Presuntivo';
+    this.formulario.tipoDiagnostico = item.tipoDiagnostico && this.tiposDiagnostico.includes(item.tipoDiagnostico)
+      ? item.tipoDiagnostico
+      : 'Presuntivo';
 
     this.formulario.observacion = this.combinarTexto(
-      this.formulario.observacion,
+      item.observacion || this.formulario.observacion,
       `Diagnóstico seleccionado desde frecuente (${item.grupo}). Correlacionar con clínica, examen físico y evolución.`
     );
+    this.uiMessageService.informacion('Plantilla aplicada', `Se cargó “${item.grupo}”. Revise los datos antes de guardar.`);
   }
+
+  clavePlantilla(item: DiagnosticoFrecuente): string { return String(item.id || item.codigo); }
 
   guardarDiagnostico(): void {
     if (this.soloLectura) return;
@@ -287,6 +318,7 @@ export class Diagnosticos implements OnInit, OnChanges {
         this.diagnosticoGuardado.emit(diagnosticoGuardado);
 
         this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+        this.plantillaSeleccionada = '';
 
         if (this.condicionesDiagnostico.includes('Secundario')) {
           this.formulario.condicion = 'Secundario';
@@ -456,12 +488,26 @@ export class Diagnosticos implements OnInit, OnChanges {
 
   cancelarEdicion(): void {
     this.formulario = this.crearFormularioVacio(this.atencionActual?.id || 0);
+    this.plantillaSeleccionada = '';
 
     if (this.obtenerTotalPrincipales() > 0 && this.condicionesDiagnostico.includes('Secundario')) {
       this.formulario.condicion = 'Secundario';
     }
 
     this.aplicarValoresInicialesFormulario();
+  }
+
+  limpiarFormularioDiagnostico(): void {
+    this.uiMessageService.confirmar(
+      'Limpiar formulario',
+      'Esta acción limpiará los datos ingresados en pantalla. No eliminará diagnósticos guardados.',
+      () => {
+        this.cancelarEdicion();
+        this.uiMessageService.informacion('Formulario limpio', 'El formulario de diagnóstico fue limpiado correctamente.');
+      },
+      'Limpiar',
+      'Cancelar'
+    );
   }
 
   eliminarDiagnostico(diagnostico: Diagnostico): void {
@@ -591,7 +637,7 @@ export class Diagnosticos implements OnInit, OnChanges {
   }
 
   trackByDiagnosticoFrecuente(index: number, diagnostico: DiagnosticoFrecuente): string {
-    return diagnostico.codigo || String(index);
+    return String(diagnostico.id || diagnostico.codigo || index);
   }
 
   obtenerMensajeError(error: any): string {

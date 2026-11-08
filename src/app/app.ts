@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { AtencionService } from './services/atencion.service';
-import { Component, HostListener, OnInit } from '@angular/core';
+import { afterNextRender, Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { UiMessageService } from './shared/ui-message.service';
@@ -26,6 +26,7 @@ import { Placeholders } from './components/placeholders/placeholders';
 import { UiModal } from './components/ui-modal/ui-modal';
 import { AdminCatalogos } from './pages/admin-catalogos/admin-catalogos';
 import { AdminUsuarios } from './pages/admin-usuarios/admin-usuario';
+import { AdminPlantillas } from './pages/admin-plantillas/admin-plantillas';
 import { PresentacionProyecto } from './pages/presentacion-proyecto/presentacion-proyecto';
 import { Mensajeria } from './components/mensajeria/mensajeria';
 
@@ -43,6 +44,7 @@ type VistaActiva =
   | 'egreso'
   | 'reportes'
   | 'mensajeria'
+  | 'admin-plantillas'
   | 'admin-catalogos'
   | 'admin-usuarios';
 
@@ -71,6 +73,7 @@ interface EventoInstalacion extends Event {
     Placeholders,
     AdminCatalogos,
     AdminUsuarios,
+    AdminPlantillas,
     Mensajeria,
     UiModal
   ],
@@ -78,7 +81,9 @@ interface EventoInstalacion extends Event {
   styleUrl: './app.css'
 })
 export class App implements OnInit {
-  mostrarPresentacion = typeof window === 'undefined' || window.location.pathname !== '/app';
+  // Mantener el mismo primer render en servidor y navegador evita que la
+  // hidratación deje incompletos los controles dinámicos al abrir /app.
+  mostrarPresentacion = true;
   instalacionDisponible = false;
   private eventoInstalacion?: EventoInstalacion;
 
@@ -121,6 +126,22 @@ export class App implements OnInit {
     this.mostrarPresentacion = false;
   }
 
+  volverALaPresentacion(): void {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    this.mostrarPresentacion = true;
+  }
+
+  @HostListener('window:popstate')
+  sincronizarNavegacion(): void {
+    if (typeof window === 'undefined') return;
+
+    this.mostrarPresentacion = window.location.pathname !== '/app';
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
   private atencionService = inject(AtencionService);
   refrescarAtencion(): void {
     const id = this.atencionActual?.id;
@@ -138,7 +159,7 @@ export class App implements OnInit {
   }
   menuAbierto = false;
   get tituloVista(): string {
-    const titulos: Record<VistaActiva, string> = {inicio: 'Tablero de emergencia', tablero: 'Tablero de emergencia', pacientes: 'Pacientes', atenciones: 'Atenciones', triaje: 'Triaje', evaluacion: 'Evaluación médica', diagnosticos: 'Diagnósticos', prescripciones: 'Prescripciones', examenes: 'Exámenes', evoluciones: 'Evoluciones', egreso: 'Egreso', reportes: 'Reporte clínico', mensajeria: 'Mensajería clínica', 'admin-usuarios': 'Usuarios y accesos', 'admin-catalogos': 'Catálogos'};
+    const titulos: Record<VistaActiva, string> = {inicio: 'Tablero de emergencia', tablero: 'Tablero de emergencia', pacientes: 'Pacientes', atenciones: 'Atenciones', triaje: 'Triaje', evaluacion: 'Evaluación médica', diagnosticos: 'Diagnósticos', prescripciones: 'Prescripciones', examenes: 'Exámenes', evoluciones: 'Evoluciones', egreso: 'Egreso', reportes: 'Reporte clínico', mensajeria: 'Mensajería clínica', 'admin-usuarios': 'Usuarios y accesos', 'admin-plantillas': 'Plantillas rápidas', 'admin-catalogos': 'Catálogos'};
     return titulos[this.vistaActiva];
   }
   vistaActiva: VistaActiva = 'inicio';
@@ -151,7 +172,11 @@ export class App implements OnInit {
   constructor(
     public authService: AuthService,
     private uiMessageService: UiMessageService
-  ) {}
+  ) {
+    afterNextRender(() => {
+      this.mostrarPresentacion = window.location.pathname !== '/app';
+    });
+  }
 
   ngOnInit(): void {
     this.usuarioActual = this.authService.obtenerUsuarioActual();
@@ -165,6 +190,7 @@ export class App implements OnInit {
         this.vistaActiva = 'inicio';
       }
     });
+
   }
 
   procesarSesionIniciada(usuario: UsuarioSesion): void {
@@ -200,7 +226,7 @@ export class App implements OnInit {
     }
 
     if (
-      (vista === 'admin-catalogos' || vista === 'admin-usuarios') &&
+      (vista === 'admin-catalogos' || vista === 'admin-usuarios' || vista === 'admin-plantillas') &&
       !this.esAdministrador()
     ) {
       this.uiMessageService.advertencia(

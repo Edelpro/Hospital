@@ -77,6 +77,8 @@
         type="button"
         *ngFor="let item of diagnosticosFrecuentes; trackBy: trackByDiagnosticoFrecuente"
         [ngClass]="item.clase"
+        [class.template-selected]="plantillaSeleccionada === clavePlantilla(item)"
+        [attr.aria-pressed]="plantillaSeleccionada === clavePlantilla(item)"
         (click)="seleccionarDiagnosticoFrecuente(item)">
         <strong>{{ item.codigo }}</strong>
         <span>{{ item.descripcion }}</span>
@@ -119,6 +121,7 @@
           <label>
             Tipo
             <select [(ngModel)]="formulario.tipoDiagnostico">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let tipo of tiposDiagnostico" [ngValue]="tipo">
                 {{ tipo }}
               </option>
@@ -128,6 +131,7 @@
           <label>
             Condición
             <select [(ngModel)]="formulario.condicion">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let condicion of condicionesDiagnostico" [ngValue]="condicion">
                 {{ condicion }}
               </option>
@@ -160,16 +164,7 @@
           </span>
         </div>
 
-        <div class="template-save-row">
-          <label>
-            Nombre de la plantilla
-            <input type="text" maxlength="60" placeholder="Ejemplo: Dolor abdominal" [(ngModel)]="nombreNuevaPlantilla" [disabled]="soloLectura">
-          </label>
-          <small>Complete el diagnóstico y guárdelo como opción rápida para este equipo.</small>
-        </div>
-
         <div class="form-actions">
-          <button class="clear-button" type="button" (click)="crearPlantillaPersonalizada()" [disabled]="soloLectura || guardandoDiagnostico"><i class="bx bx-bookmark-plus"></i> Crear plantilla</button>
           <button
             class="save-button"
             type="button"
@@ -182,7 +177,7 @@
           <button
             class="clear-button"
             type="button"
-            (click)="cancelarEdicion()"
+            (click)="formulario.id ? cancelarEdicion() : limpiarFormularioDiagnostico()"
             [disabled]="guardandoDiagnostico">
             <i class="bx bx-eraser"></i>
             {{ formulario.id ? 'Cancelar edición' : 'Limpiar' }}

@@ -3,6 +3,7 @@ using Hcu008.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Hcu008.Api.Controllers;
 
@@ -78,6 +79,7 @@ public class PacientesController : ControllerBase
     }
 
     paciente.Id = 0;
+    paciente.RegistradoPorUsuarioId = ObtenerUsuarioActualId();
     paciente.Atenciones = new List<Atencion>();
 
     _context.Pacientes.Add(paciente);
@@ -353,5 +355,10 @@ public class PacientesController : ControllerBase
     var texto = (valor ?? string.Empty).Trim();
 
     return string.IsNullOrWhiteSpace(texto) ? null : texto;
+  }
+
+  private int ObtenerUsuarioActualId()
+  {
+    return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
   }
 }

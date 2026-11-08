@@ -1,58 +1,136 @@
-# HCU 008 — Emergencia hospitalaria
+# HCU 008 — Sistema de gestión de emergencias
 
-Aplicación clínica para gestionar pacientes, atenciones, triaje, evaluación médica, diagnósticos, prescripciones, exámenes, evoluciones, egreso y reportes. Incluye permisos diferenciados para Administrador y Doctor.
+HCU 008 es una aplicación web full-stack para apoyar el flujo clínico de un área de emergencias: registro de pacientes, triaje, evaluación médica, diagnósticos, prescripciones, exámenes, evoluciones, egreso y generación de reportes PDF.
 
-## Qué significa preparar la presentación
+> **Estado del proyecto:** prototipo académico funcional, apropiado para demostración, tesis y portafolio. Antes de utilizarlo con pacientes reales se requieren infraestructura permanente, revisión de seguridad, cumplimiento legal sanitario y procedimientos operativos institucionales.
 
-La aplicación tiene tres partes que deben estar disponibles al mismo tiempo:
+## Funcionalidades principales
 
-1. SQL Server LocalDB con la base `Hcu008Db`.
-2. La API ASP.NET Core en `http://localhost:5219`.
-3. La interfaz Angular en `http://localhost:4200`.
+- Autenticación con JWT y permisos diferenciados para **Administrador** y **Doctor**.
+- Gestión de pacientes y atenciones de emergencia.
+- Flujo clínico completo: triaje, evaluación, diagnósticos CIE-10, prescripciones, exámenes, evoluciones y egreso.
+- Separación de pacientes por médico responsable.
+- Plantillas clínicas administrables para agilizar registros frecuentes.
+- Tablero de seguimiento con prioridad, estado e historial de atenciones.
+- Reporte clínico resumido en PDF con datos relevantes y espacio de firma.
+- Módulo de mensajería para preparar información destinada a correo o WhatsApp.
+- Registro de accesos y modificaciones clínicas para auditoría.
+- Aplicación web progresiva (PWA) instalable cuando se publica mediante HTTPS.
 
-Los archivos de apoyo están agrupados en `herramientas`. `INICIAR-PRESENTACION.ps1` inicia el entorno de desarrollo. `PUBLICAR-APP-WEB.ps1` une Angular y la API en una sola aplicación web para que no sea necesario ejecutar `ng serve`. La explicación completa está en `documentacion/GUIA-COMPLETA.md`.
+## Arquitectura
 
-## Crear la aplicación web integrada
+```mermaid
+flowchart LR
+    U[Usuario] --> A[Angular / PWA]
+    A -->|HTTP + JWT| B[API ASP.NET Core]
+    B -->|Entity Framework Core| C[(SQL Server)]
+    B --> D[Reportes y auditoría]
+```
+
+| Capa | Tecnología |
+| --- | --- |
+| Interfaz | Angular 21, TypeScript, HTML y CSS |
+| API | ASP.NET Core 10, C# y JWT |
+| Persistencia | Entity Framework Core y SQL Server |
+| Reportes | jsPDF |
+| Publicación | PWA, Docker Compose y Caddy/HTTPS |
+| Pruebas | Vitest y proyecto de carga .NET |
+
+## Requisitos
+
+- Node.js 24 y npm 11.
+- .NET SDK 10.
+- SQL Server activo en `localhost`.
+- PowerShell en Windows para utilizar los scripts incluidos.
+
+## Inicio rápido para desarrollo
+
+1. Clone el repositorio e ingrese en su carpeta.
+2. Prepare dependencias, base de datos y configuración local:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\herramientas\PREPARAR-PRESENTACION.ps1
+   ```
+
+3. Inicie la API y Angular:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\herramientas\INICIAR-PRESENTACION.ps1
+   ```
+
+4. Abra `http://localhost:4200`.
+
+La API de desarrollo utiliza `http://localhost:5219`. Las credenciales y claves de cada entorno deben configurarse localmente; no deben publicarse en el repositorio.
+
+## Aplicación integrada en el puerto 8080
+
+Para compilar Angular y publicar la API como una sola aplicación:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\herramientas\PUBLICAR-APP-WEB.ps1
 ```
 
-El resultado queda en `APP-WEB-LISTA`. Dentro de esa carpeta, ejecute `ABRIR-APP-WEB.cmd`; abrirá `http://localhost:8080` y la interfaz y la API funcionarán desde la misma dirección.
+El resultado se genera localmente en `APP-WEB-LISTA`. Después puede iniciarse con:
 
-La interfaz también está preparada como PWA instalable. Cuando se publique con HTTPS, Chrome o Edge mostrará **Instalar HCU 008**. Al aceptarlo, se crea un acceso como aplicación en Windows, Android o el dispositivo compatible. La interfaz puede abrir su estructura básica desde caché, pero consultar o guardar datos clínicos siempre requiere conexión con la API y la base de datos.
-
-## Preparación inicial
-
-Requisitos: Node.js 24, npm 11, .NET 10 y SQL Server LocalDB.
-
-Desde PowerShell, dentro de la carpeta del proyecto:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\herramientas\PREPARAR-PRESENTACION.ps1
+```cmd
+ABRIR-APP-WEB.cmd
 ```
 
-## Iniciar la demostración
+La aplicación queda disponible en `http://localhost:8080`. Esta carpeta es un artefacto generado y no se almacena en Git; se reconstruye con el script anterior.
+
+## Pruebas
+
+Pruebas del frontend:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\herramientas\INICIAR-PRESENTACION.ps1
+npm test -- --watch=false
 ```
 
-Espere unos segundos y abra `http://localhost:4200` si el navegador no se abre automáticamente.
+Compilación de producción:
 
-## Verificación antes de exponer
+```powershell
+npm run build
+dotnet build .\api\Hcu008.Api\Hcu008.Api\Hcu008.Api.csproj
+```
 
-- Iniciar sesión como Administrador y confirmar que aparecen Usuarios y Catálogos.
-- Iniciar sesión como Doctor y confirmar que no aparecen esas opciones administrativas.
-- Registrar un paciente de prueba y abrir una atención.
-- Guardar triaje, evaluación, diagnóstico, prescripción, examen y evolución.
-- Registrar el egreso y comprobar que la atención desaparece de Activas y aparece en Historial.
-- Abrir el reporte clínico final.
+Prueba de carga aislada contra la base `Hcu008Db_QA`:
 
-## Respaldo de la base
+```powershell
+powershell -ExecutionPolicy Bypass -File .\herramientas\EJECUTAR-PRUEBA-CARGA-QA.ps1
+```
 
-Antes de mover o reinstalar el sistema, cree una copia `.bak` de `Hcu008Db` desde SQL Server Management Studio: clic derecho en la base, **Tasks**, **Back Up**, tipo **Full**, seleccione una ubicación privada y ejecute el respaldo. Los respaldos contienen información clínica y deben permanecer fuera de carpetas públicas o repositorios.
+La prueba de carga nunca debe ejecutarse contra la base clínica principal.
 
-## Publicación en Internet
+## Estructura del repositorio
 
-No es necesaria para una presentación local. Si se desea publicar, primero se debe elegir el servidor. Después se reemplazan las direcciones `localhost`, se limita CORS al dominio definitivo, se guarda la clave JWT como secreto del servidor, se usa SQL Server de producción y se habilita HTTPS.
+```text
+HOSPITAL/
+├── api/Hcu008.Api/          API, modelos, controladores y migraciones
+├── src/app/                 Aplicación Angular
+├── public/                  Recursos estáticos y PWA
+├── tests/Hcu008.LoadTests/  Pruebas de carga
+├── herramientas/            Scripts de preparación, publicación y respaldo
+├── deploy/                  Plantillas para despliegue permanente
+└── documentacion/           Guías técnicas, UX, privacidad y operación
+```
+
+## Documentación
+
+- [Guía completa](documentacion/GUIA-COMPLETA.md)
+- [Diseño del sistema](documentacion/DISENO.md)
+- [Guía de experiencia de usuario](documentacion/GUIA-UX.md)
+- [Despliegue de producción](documentacion/DESPLIEGUE-PRODUCCION.md)
+- [Plan de operación y soporte](documentacion/PLAN-OPERACION-Y-SOPORTE.md)
+- [Borrador de política de privacidad](documentacion/POLITICA-PRIVACIDAD-BORRADOR.md)
+- [Política de seguridad del repositorio](SECURITY.md)
+
+## Seguridad y privacidad
+
+- No suba archivos `.env`, respaldos `.bak`, contraseñas, claves JWT ni datos reales de pacientes.
+- Use únicamente datos ficticios en demostraciones, capturas y pruebas.
+- En producción, habilite HTTPS, almacene secretos fuera del código y restrinja CORS al dominio autorizado.
+- Mantenga respaldos cifrados, control de acceso, auditoría y un procedimiento de restauración probado.
+
+## Alcance
+
+El repositorio demuestra análisis, diseño, desarrollo full-stack, persistencia, seguridad por roles, reportes, pruebas y preparación de despliegue. No constituye por sí solo un producto médico certificado ni reemplaza la validación clínica, legal y de ciberseguridad exigida por la institución que lo utilice.

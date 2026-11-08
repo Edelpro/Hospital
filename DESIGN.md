@@ -25,7 +25,10 @@ Sistema clínico de emergencia para personal administrativo y médico. Su tarea 
 - Acción primaria: botón verde sólido. Acción secundaria: contorno neutro. Eliminación: rojo con confirmación propia de la aplicación.
 - Todo guardado espera confirmación de la API, bloquea envíos duplicados y muestra resultado mediante el sistema común de mensajes.
 - Las listas deben incluir estados de carga, vacío y error.
-- Las plantillas clínicas se crean con un campo de nombre visible; no se usan diálogos nativos del navegador.
+- Las plantillas clínicas se crean únicamente desde el módulo administrativo Plantillas. El administrador elige Diagnósticos, Prescripciones, Exámenes o Evoluciones y completa un formulario específico.
+- Los módulos clínicos muestran las plantillas activas como tarjetas rápidas y no mezclan la creación administrativa con el registro del paciente.
+- Los campos de opción única usan el `select` nativo del navegador. Todo estado vacío muestra “Seleccione una opción” y nunca un cuadro sin texto.
+- El visor corporal conserva la ilustración anatómica frontal validada y usa recursos laterales específicos para los perfiles izquierdo y derecho. Las vistas laterales son avatares clínicos cubiertos con regiones corporales delimitadas; no se muestran detalles anatómicos sensibles ni se inventa una vista posterior.
 - Los datos ya guardados viven en SQL Server. Los datos todavía no guardados se mantienen mientras el usuario navega entre módulos abiertos.
 
 ## Accesibilidad y adaptación
@@ -37,6 +40,9 @@ Sistema clínico de emergencia para personal administrativo y médico. Su tarea 
 
 ## Límites
 
-- Las plantillas personalizadas se guardan en el navegador del equipo actual y no contienen datos del paciente.
+- Las plantillas compartidas se guardan en la base de datos mediante la API y no contienen datos del paciente.
 - Los borradores no sustituyen el botón Guardar ni la confirmación del servidor.
 - El reporte final se genera únicamente desde información confirmada por la API.
+- El reporte clínico se genera como PDF real de una sola hoja A4: prioriza identificación, triaje, hallazgos, diagnósticos, tratamiento, resultados, egreso y validación profesional. El detalle completo permanece en el sistema.
+- En dispositivos compatibles se comparte el archivo mediante el menú nativo del sistema. En WhatsApp Web, el sistema descarga el PDF, abre la conversación y pide al usuario adjuntarlo antes del envío final.
+- La aplicación nunca debe indicar que un reporte fue enviado hasta que el sistema operativo confirme que la acción de compartir terminó.

@@ -85,6 +85,7 @@
           <label>
             Tipo de egreso
             <select [(ngModel)]="formulario.tipoEgreso">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let tipo of tiposEgreso" [ngValue]="tipo">
                 {{ tipo }}
               </option>
@@ -94,6 +95,7 @@
           <label>
             Condición de egreso
             <select [(ngModel)]="formulario.condicionEgreso">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let condicion of condicionesEgreso" [ngValue]="condicion">
                 {{ condicion }}
               </option>
@@ -103,6 +105,7 @@
           <label>
             Destino
             <select [(ngModel)]="formulario.destino">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let destino of destinos" [ngValue]="destino">
                 {{ destino }}
               </option>
@@ -213,11 +216,10 @@
 
           <label>
             Parentesco
-            <input
-              type="text"
-              maxlength="80"
-              placeholder="Parentesco"
-              [(ngModel)]="formulario.parentescoAcompanante">
+            <select [(ngModel)]="formulario.parentescoAcompanante">
+              <option [ngValue]="null">Seleccione</option>
+              <option *ngFor="let parentesco of parentescos" [value]="parentesco">{{ parentesco }}</option>
+            </select>
           </label>
         </div>
 

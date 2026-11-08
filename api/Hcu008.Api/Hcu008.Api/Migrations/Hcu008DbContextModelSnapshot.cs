@@ -72,6 +72,9 @@ namespace Hcu008.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("ResponsableUsuarioId")
+                        .HasColumnType("int");
+
                     b.Property<string>("TelefonoAcompanante")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -87,7 +90,9 @@ namespace Hcu008.Api.Migrations
 
                     b.HasIndex("PacienteId");
 
-                    b.ToTable("Atenciones");
+                    b.HasIndex("ResponsableUsuarioId");
+
+                    b.ToTable("Atenciones", (string)null);
                 });
 
             modelBuilder.Entity("Hcu008.Api.Models.CatalogoItem", b =>
@@ -280,7 +285,7 @@ namespace Hcu008.Api.Migrations
                     b.HasIndex("AtencionId")
                         .IsUnique();
 
-                    b.ToTable("Egresos");
+                    b.ToTable("Egresos", (string)null);
                 });
 
             modelBuilder.Entity("Hcu008.Api.Models.EvaluacionMedica", b =>
@@ -497,7 +502,7 @@ namespace Hcu008.Api.Migrations
 
                     b.HasIndex("AtencionId");
 
-                    b.ToTable("Evoluciones");
+                    b.ToTable("Evoluciones", (string)null);
                 });
 
             modelBuilder.Entity("Hcu008.Api.Models.Examen", b =>
@@ -560,7 +565,7 @@ namespace Hcu008.Api.Migrations
 
                     b.HasIndex("AtencionId");
 
-                    b.ToTable("Examenes");
+                    b.ToTable("Examenes", (string)null);
                 });
 
             modelBuilder.Entity("Hcu008.Api.Models.Paciente", b =>
@@ -605,6 +610,9 @@ namespace Hcu008.Api.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("nvarchar(80)");
 
+                    b.Property<int?>("RegistradoPorUsuarioId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Sexo")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -619,7 +627,56 @@ namespace Hcu008.Api.Migrations
                     b.HasIndex("Cedula")
                         .IsUnique();
 
-                    b.ToTable("Pacientes");
+                    b.HasIndex("RegistradoPorUsuarioId");
+
+                    b.ToTable("Pacientes", (string)null);
+                });
+
+            modelBuilder.Entity("Hcu008.Api.Models.PlantillaClinica", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ClaseColor")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("ContenidoJson")
+                        .IsRequired()
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CreadoPorUsuarioId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Modulo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Modulo", "Activo");
+
+                    b.HasIndex("Modulo", "Nombre")
+                        .IsUnique();
+
+                    b.ToTable("PlantillasClinicas", (string)null);
                 });
 
             modelBuilder.Entity("Hcu008.Api.Models.Prescripcion", b =>
@@ -688,7 +745,81 @@ namespace Hcu008.Api.Migrations
 
                     b.HasIndex("AtencionId");
 
-                    b.ToTable("Prescripciones");
+                    b.ToTable("Prescripciones", (string)null);
+                });
+
+            modelBuilder.Entity("Hcu008.Api.Models.RegistroAcceso", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CodigoEstado")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CorrelacionId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("DireccionIp")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<long>("DuracionMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Evento")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<bool>("Exitoso")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Metodo")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.Property<string>("Resultado")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Ruta")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Usuario")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FechaUtc");
+
+                    b.HasIndex("Exitoso", "FechaUtc");
+
+                    b.HasIndex("UsuarioId", "FechaUtc");
+
+                    b.ToTable("RegistrosAcceso", (string)null);
                 });
 
             modelBuilder.Entity("Hcu008.Api.Models.RegistroAuditoria", b =>
@@ -915,7 +1046,7 @@ namespace Hcu008.Api.Migrations
                     b.HasIndex("AtencionId")
                         .IsUnique();
 
-                    b.ToTable("Triajes");
+                    b.ToTable("Triajes", (string)null);
                 });
 
             modelBuilder.Entity("Hcu008.Api.Models.UsuarioSistema", b =>

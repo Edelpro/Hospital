@@ -81,6 +81,7 @@
       <label>
         Sexo
         <select [(ngModel)]="nuevoPaciente.sexo">
+          <option value="" disabled>Seleccione una opción</option>
           <option *ngFor="let sexo of sexos" [ngValue]="sexo">
             {{ sexo }}
           </option>
@@ -110,6 +111,7 @@
         <select
           [(ngModel)]="nuevoPaciente.provincia"
           (change)="actualizarCantones()">
+          <option value="" disabled>Seleccione una opción</option>
           <option *ngFor="let provincia of provincias" [ngValue]="provincia.nombre">
             {{ provincia.nombre }}
           </option>
@@ -121,6 +123,7 @@
         <select
           [(ngModel)]="nuevoPaciente.canton"
           (change)="actualizarParroquias()">
+          <option value="" disabled>Seleccione una opción</option>
           <option *ngFor="let canton of cantonesDisponibles" [ngValue]="canton.nombre">
             {{ canton.nombre }}
           </option>
@@ -130,6 +133,7 @@
       <label>
         Parroquia
         <select [(ngModel)]="nuevoPaciente.parroquia">
+          <option value="" disabled>Seleccione una opción</option>
           <option *ngFor="let parroquia of parroquiasDisponibles" [ngValue]="parroquia">
             {{ parroquia }}
           </option>

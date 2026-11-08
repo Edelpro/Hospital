@@ -39,20 +39,30 @@
             "ssr": {
               "entry": "src/server.ts"
             },
-            "serviceWorker": "ngsw-config.json"
+            "serviceWorker": "ngsw-config.json",
+            "allowedCommonJsDependencies": [
+              "jspdf",
+              "html2canvas",
+              "dompurify",
+              "canvg",
+              "core-js",
+              "raf",
+              "rgbcolor",
+              "fflate"
+            ]
           },
           "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1.05MB",
+                  "maximumError": "1.25MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "24kB"
+                  "maximumWarning": "24kB",
+                  "maximumError": "28kB"
                 }
               ],
               "outputHashing": "all"

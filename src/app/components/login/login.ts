@@ -14,6 +14,7 @@ import { UsuarioSesion } from '../../models/usuario-sesion.model';
 })
 export class Login {
   @Output() sesionIniciada = new EventEmitter<UsuarioSesion>();
+  @Output() volverPresentacion = new EventEmitter<void>();
 
   modoRegistro = false;
 
@@ -25,7 +26,6 @@ export class Login {
 
   registroNombres = '';
   registroCorreo = '';
-  registroRol = 'Doctor';
   mensajeRegistro = '';
   enviandoSolicitud = false;
 
@@ -68,9 +68,11 @@ export class Login {
           this.sesionIniciada.emit(usuario);
         }
       },
-      error: () => {
+      error: (error: any) => {
         this.cargando = false;
-        this.mensajeError = 'No se pudo iniciar sesión. Revise la conexión con la API.';
+        this.mensajeError = error?.status === 429
+          ? 'Se realizaron demasiados intentos. Espere un minuto y vuelva a intentarlo.'
+          : 'No se pudo iniciar sesión. Revise la conexión con la API.';
       }
     });
   }
@@ -109,7 +111,6 @@ export class Login {
 
         this.registroNombres = '';
         this.registroCorreo = '';
-        this.registroRol = 'Doctor';
       },
       error: (error: any) => {
         this.enviandoSolicitud = false;

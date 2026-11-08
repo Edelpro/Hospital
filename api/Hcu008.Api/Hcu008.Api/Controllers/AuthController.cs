@@ -8,6 +8,7 @@ using Hcu008.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Hcu008.Api.Controllers;
 
@@ -29,6 +30,7 @@ public class AuthController : ControllerBase
 
   [HttpPost("login")]
   [AllowAnonymous]
+  [EnableRateLimiting("login")]
   public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
   {
     var correo = (request.Correo ?? string.Empty).Trim().ToLower();
@@ -36,6 +38,7 @@ public class AuthController : ControllerBase
 
     if (string.IsNullOrWhiteSpace(correo) || string.IsNullOrWhiteSpace(clave))
     {
+      await RegistrarLoginAsync(correo, null, StatusCodes.Status400BadRequest, false, "Datos incompletos");
       return BadRequest("Ingrese correo y contraseña.");
     }
 
@@ -45,11 +48,13 @@ public class AuthController : ControllerBase
 
     if (usuario is null)
     {
+      await RegistrarLoginAsync(correo, null, StatusCodes.Status401Unauthorized, false, "Credenciales incorrectas");
       return Unauthorized("Correo o contraseña incorrectos.");
     }
 
     if (!usuario.Activo)
     {
+      await RegistrarLoginAsync(correo, usuario, StatusCodes.Status401Unauthorized, false, "Usuario inactivo");
       return Unauthorized("El usuario se encuentra inactivo. Solicite activación al administrador.");
     }
 
@@ -57,11 +62,13 @@ public class AuthController : ControllerBase
 
     if (!claveCorrecta)
     {
+      await RegistrarLoginAsync(correo, usuario, StatusCodes.Status401Unauthorized, false, "Credenciales incorrectas");
       return Unauthorized("Correo o contraseña incorrectos.");
     }
 
     var expiraEn = DateTime.UtcNow.AddMinutes(ObtenerMinutosExpiracion());
     var token = GenerarToken(usuario, expiraEn);
+    await RegistrarLoginAsync(correo, usuario, StatusCodes.Status200OK, true, "Inicio de sesión correcto");
 
     return Ok(new LoginResponse
     {
@@ -130,5 +137,40 @@ public class AuthController : ControllerBase
     var iniciales = $"{inicialNombre}{inicialApellido}".ToUpper();
 
     return string.IsNullOrWhiteSpace(iniciales) ? "US" : iniciales;
+  }
+
+  private async Task RegistrarLoginAsync(
+      string correo,
+      UsuarioSistema? usuario,
+      int codigoEstado,
+      bool exitoso,
+      string resultado)
+  {
+    try
+    {
+      _context.RegistrosAcceso.Add(new RegistroAcceso
+      {
+        FechaUtc = DateTime.UtcNow,
+        UsuarioId = usuario?.Id,
+        Usuario = usuario is null
+            ? (string.IsNullOrWhiteSpace(correo) ? "No identificado" : correo)
+            : $"{usuario.Nombres} {usuario.Apellidos}".Trim(),
+        Rol = usuario?.Rol ?? "",
+        Metodo = "POST",
+        Ruta = "/api/Auth/login",
+        DireccionIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
+        Evento = "Inicio de sesión",
+        Resultado = resultado,
+        CorrelacionId = HttpContext.TraceIdentifier,
+        CodigoEstado = codigoEstado,
+        DuracionMs = 0,
+        Exitoso = exitoso
+      });
+      await _context.SaveChangesAsync(HttpContext.RequestAborted);
+    }
+    catch (Exception)
+    {
+      // La auditoría nunca debe cambiar la respuesta de autenticación.
+    }
   }
 }

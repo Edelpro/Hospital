@@ -16,9 +16,19 @@
         Recargar
       </button>
 
-      <button type="button" class="print-button" (click)="imprimirReporte()" [disabled]="cargandoReporte || !reporte">
-        <i class="bx bxs-file-pdf"></i>
-        Imprimir / Guardar PDF
+      <button type="button" class="secondary-button" (click)="imprimirReporte()" [disabled]="cargandoReporte || !reporte">
+        <i class="bx bx-printer"></i>
+        Imprimir
+      </button>
+
+      <button type="button" class="print-button" (click)="descargarReportePdf()" [disabled]="cargandoReporte || generandoPdf || !reporte">
+        <i class="bx" [class.bx-loader-circle]="generandoPdf" [class.bx-spin]="generandoPdf" [class.bxs-file-pdf]="!generandoPdf"></i>
+        {{ generandoPdf ? 'Generando PDF...' : 'Descargar PDF' }}
+      </button>
+
+      <button type="button" class="share-button" (click)="irA('mensajeria')" [disabled]="cargandoReporte || !reporte">
+        <i class="bx bxl-whatsapp"></i>
+        Enviar PDF
       </button>
     </div>
   </div>

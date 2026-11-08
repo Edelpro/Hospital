@@ -50,7 +50,7 @@
 
   <div class="admin-layout">
 
-    <form class="catalog-form" (ngSubmit)="guardarCatalogo()">
+    <form class="catalog-form" novalidate (ngSubmit)="guardarCatalogo()">
       <div class="form-header">
         <div>
           <h3>
@@ -70,6 +70,7 @@
         <label>
           <span>Tipo de catálogo</span>
           <select [(ngModel)]="formulario.tipo" name="tipo" required>
+            <option value="" disabled>Seleccione una opción</option>
             <option *ngFor="let tipo of tiposCatalogo" [value]="tipo">
               {{ obtenerNombreTipo(tipo) }}
             </option>
@@ -255,4 +256,5 @@
     </section>
 
   </div>
+
 </section>

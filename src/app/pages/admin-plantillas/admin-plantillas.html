@@ -1,0 +1,111 @@
+<section class="templates-module">
+  <header class="module-intro">
+    <div class="intro-icon"><i class="bx bx-bookmark-heart" aria-hidden="true"></i></div>
+    <div>
+      <span class="eyebrow">CONFIGURACIÓN CLÍNICA</span>
+      <h2>Plantillas rápidas</h2>
+      <p>Cree opciones compartidas para que los doctores completen sus registros con menos pasos.</p>
+    </div>
+    <button type="button" class="refresh-button" (click)="cargarPlantillas()" [disabled]="cargando">
+      <i class="bx bx-refresh" [class.bx-spin]="cargando" aria-hidden="true"></i> Actualizar
+    </button>
+  </header>
+
+  <section class="module-picker" aria-labelledby="module-picker-title">
+    <div class="section-heading">
+      <div><span>PASO 1</span><h3 id="module-picker-title">Seleccione el módulo</h3></div>
+      <small>La plantilla aparecerá únicamente en el módulo elegido.</small>
+    </div>
+    <div class="module-cards">
+      <button type="button" class="module-card" *ngFor="let modulo of modulos; trackBy: trackByModulo"
+        [class.selected]="moduloSeleccionado === modulo.id" [attr.data-color]="modulo.color"
+        [attr.aria-pressed]="moduloSeleccionado === modulo.id" (click)="seleccionarModulo(modulo.id)">
+        <span class="module-icon"><i class="bx" [ngClass]="modulo.icono" aria-hidden="true"></i></span>
+        <span class="module-copy"><strong>{{ modulo.titulo }}</strong><small>{{ modulo.descripcion }}</small></span>
+        <span class="module-count">{{ contarPlantillas(modulo.id) }}</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="workspace-grid">
+    <form class="editor-card" novalidate (ngSubmit)="crearPlantilla()">
+      <div class="section-heading compact">
+        <div><span>PASO 2</span><h3>Crear en {{ obtenerTituloModulo(moduloSeleccionado) }}</h3></div>
+        <button type="button" class="text-button" (click)="limpiarFormulario()"><i class="bx bx-eraser"></i> Limpiar</button>
+      </div>
+
+      <label class="full-field">
+        <span>Nombre de la plantilla <b>*</b></span>
+        <input type="text" name="nombre" [(ngModel)]="formulario.nombre" minlength="3" maxlength="60" placeholder="Ejemplo: Atención inicial" required>
+      </label>
+
+      <ng-container [ngSwitch]="moduloSeleccionado">
+        <div class="form-grid" *ngSwitchCase="'Diagnosticos'">
+          <label><span>Código CIE-10 <b>*</b></span><input name="codigo" [(ngModel)]="formulario.codigo" maxlength="15" placeholder="Ejemplo: R10.0"></label>
+          <label><span>Tipo</span><select name="tipoDiagnostico" [(ngModel)]="formulario.tipoDiagnostico"><option value="" disabled>Seleccione una opción</option><option *ngFor="let opcion of obtenerOpciones('TipoDiagnostico', ['Presuntivo'])">{{ opcion }}</option></select></label>
+          <label class="wide"><span>Descripción CIE-10 <b>*</b></span><input name="descripcion" [(ngModel)]="formulario.descripcion" maxlength="180" placeholder="Descripción del diagnóstico"></label>
+          <label><span>Condición</span><select name="condicion" [(ngModel)]="formulario.condicion"><option value="" disabled>Seleccione una opción</option><option *ngFor="let opcion of obtenerOpciones('CondicionDiagnostico', ['Principal'])">{{ opcion }}</option></select></label>
+          <label class="wide"><span>Observación clínica</span><textarea name="observacion" [(ngModel)]="formulario.observacion" rows="3" maxlength="600" placeholder="Indicaciones o criterios de uso"></textarea></label>
+        </div>
+
+        <div class="form-grid" *ngSwitchCase="'Prescripciones'">
+          <label><span>Medicamento <b>*</b></span><input name="medicamento" [(ngModel)]="formulario.medicamento" placeholder="Ejemplo: Paracetamol"></label>
+          <label><span>Presentación</span><input name="presentacion" [(ngModel)]="formulario.presentacion" placeholder="Tableta, ampolla..."></label>
+          <label><span>Dosis <b>*</b></span><input name="dosis" [(ngModel)]="formulario.dosis" placeholder="Ejemplo: 1 g"></label>
+          <label><span>Vía</span><select name="via" [(ngModel)]="formulario.viaAdministracion"><option value="" disabled>Seleccione una opción</option><option *ngFor="let opcion of obtenerOpciones('ViaAdministracion', ['VO','IV','IM'])">{{ opcion }}</option></select></label>
+          <label><span>Frecuencia</span><select name="frecuencia" [(ngModel)]="formulario.frecuencia"><option value="" disabled>Seleccione una opción</option><option *ngFor="let opcion of obtenerOpciones('FrecuenciaMedicacion', ['Dosis única','Cada 8 horas'])">{{ opcion }}</option></select></label>
+          <label><span>Duración</span><input name="duracion" [(ngModel)]="formulario.duracion" placeholder="Según evolución"></label>
+          <label><span>Cantidad</span><input name="cantidad" [(ngModel)]="formulario.cantidad" placeholder="Ejemplo: 10 tabletas"></label>
+          <label class="wide"><span>Indicaciones</span><textarea name="indicaciones" [(ngModel)]="formulario.indicaciones" rows="3" maxlength="600"></textarea></label>
+        </div>
+
+        <div class="form-grid" *ngSwitchCase="'Examenes'">
+          <label class="wide"><span>Nombre del examen <b>*</b></span><input name="nombreExamen" [(ngModel)]="formulario.nombreExamen" placeholder="Ejemplo: Hemograma completo"></label>
+          <label><span>Tipo</span><select name="tipoExamen" [(ngModel)]="formulario.tipoExamen"><option value="" disabled>Seleccione una opción</option><option *ngFor="let opcion of obtenerOpciones('TipoExamen', ['Laboratorio','Imagen'])">{{ opcion }}</option></select></label>
+          <label><span>Prioridad</span><select name="prioridad" [(ngModel)]="formulario.prioridad"><option value="" disabled>Seleccione una opción</option><option *ngFor="let opcion of obtenerOpciones('PrioridadExamen', ['Rutina','Urgente'])">{{ opcion }}</option></select></label>
+          <label class="wide"><span>Indicación clínica <b>*</b></span><textarea name="indicacionClinica" [(ngModel)]="formulario.indicacionClinica" rows="3" maxlength="600"></textarea></label>
+          <label class="wide"><span>Observación</span><textarea name="observacionExamen" [(ngModel)]="formulario.observacion" rows="2" maxlength="400"></textarea></label>
+          <label class="check-card"><input type="checkbox" name="requiereAyuno" [(ngModel)]="formulario.requiereAyuno"><span>Requiere ayuno</span></label>
+          <label class="check-card"><input type="checkbox" name="esUrgente" [(ngModel)]="formulario.esUrgente"><span>Marcar como urgente</span></label>
+        </div>
+
+        <div class="form-grid" *ngSwitchCase="'Evoluciones'">
+          <label><span>Tipo de evolución</span><select name="tipoEvolucion" [(ngModel)]="formulario.tipoEvolucion"><option value="" disabled>Seleccione una opción</option><option *ngFor="let opcion of obtenerOpciones('TipoEvolucion', ['Reevaluación'])">{{ opcion }}</option></select></label>
+          <label><span>Condición del paciente</span><select name="condicionPaciente" [(ngModel)]="formulario.condicionPaciente"><option value="" disabled>Seleccione una opción</option><option *ngFor="let opcion of obtenerOpciones('CondicionPaciente', ['Estable'])">{{ opcion }}</option></select></label>
+          <label class="wide"><span>Subjetivo</span><textarea name="subjetivo" [(ngModel)]="formulario.subjetivo" rows="2"></textarea></label>
+          <label class="wide"><span>Objetivo <b>*</b></span><textarea name="objetivo" [(ngModel)]="formulario.objetivo" rows="2"></textarea></label>
+          <label class="wide"><span>Análisis <b>*</b></span><textarea name="analisis" [(ngModel)]="formulario.analisis" rows="2"></textarea></label>
+          <label class="wide"><span>Plan <b>*</b></span><textarea name="plan" [(ngModel)]="formulario.plan" rows="2"></textarea></label>
+          <label class="wide"><span>Respuesta al tratamiento</span><textarea name="respuestaTratamiento" [(ngModel)]="formulario.respuestaTratamiento" rows="2"></textarea></label>
+          <label class="check-card"><input type="checkbox" name="requiereReevaluacion" [(ngModel)]="formulario.requiereReevaluacion"><span>Requiere reevaluación</span></label>
+          <label class="check-card warning"><input type="checkbox" name="esCritica" [(ngModel)]="formulario.esCritica"><span>Evolución crítica</span></label>
+        </div>
+      </ng-container>
+
+      <div class="editor-actions">
+        <span><i class="bx bx-info-circle"></i> Los campos con * son obligatorios.</span>
+        <button type="submit" class="primary-button" [disabled]="guardando"><i class="bx bx-bookmark-plus"></i> {{ guardando ? 'Creando...' : 'Crear plantilla' }}</button>
+      </div>
+    </form>
+
+    <section class="library-card">
+      <div class="section-heading compact"><div><span>BIBLIOTECA</span><h3>{{ obtenerTituloModulo(moduloSeleccionado) }}</h3></div><strong class="result-count">{{ plantillasFiltradas.length }}</strong></div>
+      <div class="filters-row">
+        <label class="search-field"><i class="bx bx-search"></i><input type="search" [(ngModel)]="busqueda" placeholder="Buscar plantilla" aria-label="Buscar plantilla"></label>
+        <label class="state-filter"><span class="sr-only">Estado</span><select [(ngModel)]="filtroEstado" aria-label="Filtrar por estado"><option>Todas</option><option>Activas</option><option>Inactivas</option></select></label>
+      </div>
+      <div class="loading-state" *ngIf="cargando"><i class="bx bx-loader-circle bx-spin"></i><span>Cargando plantillas...</span></div>
+      <div class="template-list" *ngIf="!cargando && plantillasFiltradas.length">
+        <article class="template-card" *ngFor="let plantilla of plantillasFiltradas; trackBy: trackByPlantilla" [class.inactive]="!plantilla.activo">
+          <div class="template-top"><span class="template-icon"><i class="bx bx-bookmark"></i></span><span class="status-pill" [class.off]="!plantilla.activo">{{ plantilla.activo ? 'Activa' : 'Inactiva' }}</span></div>
+          <h4>{{ plantilla.nombre }}</h4><p>{{ obtenerResumen(plantilla) }}</p>
+          <div class="template-actions">
+            <button type="button" (click)="cambiarEstado(plantilla)"><i class="bx" [ngClass]="plantilla.activo ? 'bx-hide' : 'bx-show'"></i>{{ plantilla.activo ? 'Desactivar' : 'Activar' }}</button>
+            <button type="button" class="danger" (click)="eliminar(plantilla)" aria-label="Eliminar plantilla"><i class="bx bx-trash"></i></button>
+          </div>
+        </article>
+      </div>
+      <div class="empty-state" *ngIf="!cargando && !plantillasFiltradas.length"><span><i class="bx bx-bookmark-alt"></i></span><h4>Sin plantillas en este módulo</h4><p>Cree la primera con el formulario de la izquierda.</p></div>
+    </section>
+  </div>
+</section>

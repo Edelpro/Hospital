@@ -5,6 +5,17 @@
 /tmp
 /out-tsc
 /bazel-out
+/APP-WEB-LISTA/
+/api/Hcu008.Api/Hcu008.Api/wwwroot/
+/output/
+**/bin/
+**/obj/
+**/.vs/
+deploy/.env
+*.bak
+backups/
+premium-audit.json
+*.pdb
 
 # Node
 /node_modules
@@ -13,6 +24,7 @@ yarn-error.log
 
 # IDEs and editors
 .idea/
+*.user
 .project
 .classpath
 .c9/
@@ -38,6 +50,8 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
+appsettings.Local.json
+appsettings.Production.json
 
 # System files
 .DS_Store

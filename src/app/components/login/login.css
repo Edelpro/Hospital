@@ -16,7 +16,42 @@
   background:
     radial-gradient(circle at top left, rgba(25, 166, 106, 0.18), transparent 35%),
     linear-gradient(135deg, #eef8f2, #dbece3);
-  padding: 30px;
+  padding: 78px 30px 30px;
+  position: relative;
+}
+
+.back-to-site {
+  position: absolute;
+  top: 22px;
+  left: 24px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1.6px solid #a9d2bf;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f5132;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(15, 81, 50, 0.1);
+}
+
+.back-to-site:hover {
+  border-color: #0f5132;
+  background: #ffffff;
+}
+
+.back-to-site:focus-visible {
+  outline: 3px solid rgba(25, 166, 106, 0.28);
+  outline-offset: 2px;
+}
+
+.back-to-site i {
+  font-size: 20px;
 }
 
 .login-container {
@@ -194,6 +229,25 @@ form {
   margin-bottom: 13px;
   text-align: left;
 }
+
+.role-display {
+  min-height: 52px;
+  margin: 16px 0;
+  padding: 9px 16px;
+  border: 1.8px solid #cfe4d9;
+  border-radius: 13px;
+  background: #f4f8f6;
+  color: #102317;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.role-display > i { color: #0f5132; font-size: 22px; }
+.role-display span { display: grid; gap: 1px; }
+.role-display small { color: #5c7a6b; font-size: 11px; font-weight: 700; }
+.role-display strong { font-size: 14px; font-weight: 800; }
 
 .error-box {
   background: #fff1f2;
@@ -471,7 +525,8 @@ form {
 .forgot-link span { color: var(--gray-text); font-size: 13px; line-height: 1.5; }
 .success-box.error-box { background: #fff1f2; border-color: #fecaca; color: #b91c1c; }
 @media (max-width: 760px) {
-  .login-page { padding: 16px; min-height: 100dvh; align-items: start; }
+  .login-page { padding: 72px 16px 16px; min-height: 100dvh; align-items: start; }
+  .back-to-site { top: 14px; left: 16px; }
   .login-container { height: auto; min-height: 0; display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; }
   .login-container::before { display: none; }
   .login-container .form-box { position: static; width: 100%; height: auto; padding: 28px 22px; transform: none; transition: none; }

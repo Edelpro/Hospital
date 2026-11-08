@@ -305,74 +305,6 @@ textarea:focus {
   height: 275px;
 }
 
-.body-head,
-.body-neck,
-.body-trunk,
-.body-arm,
-.body-leg {
-  position: absolute;
-  background: rgba(183, 216, 202, 0.42);
-  border: 1.4px solid rgba(26, 77, 46, 0.18);
-}
-
-.body-head {
-  width: 36px;
-  height: 36px;
-  left: 42px;
-  top: 4px;
-  border-radius: 50%;
-}
-
-.body-neck {
-  width: 18px;
-  height: 18px;
-  left: 51px;
-  top: 38px;
-  border-radius: 8px;
-}
-
-.body-trunk {
-  width: 62px;
-  height: 112px;
-  left: 29px;
-  top: 54px;
-  border-radius: 32px 32px 24px 24px;
-}
-
-.body-arm {
-  width: 19px;
-  height: 112px;
-  top: 68px;
-  border-radius: 18px;
-}
-
-.body-arm.left {
-  left: 8px;
-  transform: rotate(12deg);
-}
-
-.body-arm.right {
-  right: 8px;
-  transform: rotate(-12deg);
-}
-
-.body-leg {
-  width: 22px;
-  height: 112px;
-  top: 158px;
-  border-radius: 18px;
-}
-
-.body-leg.left {
-  left: 34px;
-  transform: rotate(5deg);
-}
-
-.body-leg.right {
-  right: 34px;
-  transform: rotate(-5deg);
-}
-
 .body-marker {
   position: absolute;
   width: 15px;
@@ -402,11 +334,6 @@ textarea:focus {
 .marker-abdomen {
   left: 52px;
   top: 135px;
-}
-
-.marker-limb {
-  right: 4px;
-  top: 145px;
 }
 
 .physical-content {
@@ -800,94 +727,6 @@ textarea {
   filter: drop-shadow(0 8px 16px rgba(26, 77, 46, 0.10));
 }
 
-.body-head,
-.body-neck,
-.body-trunk,
-.body-arm,
-.body-leg {
-  background: linear-gradient(180deg, rgba(215, 237, 228, 0.9), rgba(187, 219, 206, 0.68));
-  border: 1.8px solid rgba(26, 77, 46, 0.22);
-}
-
-.body-head {
-  width: 40px;
-  height: 40px;
-  left: 45px;
-  top: 2px;
-  border-radius: 50%;
-}
-
-.body-head::after {
-  content: "";
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  left: 14px;
-  top: 10px;
-  border-radius: 50%;
-  background: rgba(26, 77, 46, 0.18);
-}
-
-.body-neck {
-  width: 20px;
-  height: 18px;
-  left: 55px;
-  top: 41px;
-  border-radius: 8px;
-}
-
-.body-trunk {
-  width: 68px;
-  height: 122px;
-  left: 31px;
-  top: 57px;
-  border-radius: 34px 34px 26px 26px;
-}
-
-.body-trunk::after {
-  content: "";
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  top: 52px;
-  height: 1.5px;
-  background: rgba(26, 77, 46, 0.18);
-}
-
-.body-arm {
-  width: 20px;
-  height: 118px;
-  top: 73px;
-  border-radius: 18px;
-}
-
-.body-arm.left {
-  left: 7px;
-  transform: rotate(13deg);
-}
-
-.body-arm.right {
-  right: 7px;
-  transform: rotate(-13deg);
-}
-
-.body-leg {
-  width: 24px;
-  height: 116px;
-  top: 171px;
-  border-radius: 18px;
-}
-
-.body-leg.left {
-  left: 36px;
-  transform: rotate(5deg);
-}
-
-.body-leg.right {
-  right: 36px;
-  transform: rotate(-5deg);
-}
-
 /* MARCADORES DEL MANIQUÍ MÁS VISIBLES */
 
 .body-marker {
@@ -924,11 +763,6 @@ textarea {
 .marker-abdomen {
   left: 57px;
   top: 145px;
-}
-
-.marker-limb {
-  right: 3px;
-  top: 153px;
 }
 
 /* BOTONES DE SISTEMA MÁS DEFINIDOS */
@@ -1665,30 +1499,6 @@ textarea {
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.86), 0 14px 28px rgba(23,107,80,.10);
 }
 
-.body-panel::before,
-.body-panel::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.body-panel::before {
-  width: 170px;
-  height: 170px;
-  top: -90px;
-  right: -75px;
-  background: rgba(86, 189, 219, 0.14);
-}
-
-.body-panel::after {
-  width: 130px;
-  height: 130px;
-  left: -65px;
-  bottom: -65px;
-  background: rgba(244, 181, 72, 0.12);
-}
-
 .body-silhouette {
   width: 148px;
   height: 320px;
@@ -1766,4 +1576,158 @@ textarea {
   color: var(--muted, #536b63);
   font-size: 0.82rem;
   line-height: 1.45;
+}
+
+/* Mapa corporal multivista: cada orientación usa su propio recurso clínico. */
+@media (min-width: 1101px) {
+  .physical-layout {
+    grid-template-columns: 236px minmax(0, 1fr);
+  }
+}
+
+.body-panel {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 430px;
+  padding: 12px 12px 10px;
+}
+
+.body-view-header {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+
+.body-view-header > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #28584a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.body-view-header > span i {
+  font-size: 15px;
+  color: var(--primary-color);
+}
+
+.body-view-switch {
+  display: grid;
+  grid-template-columns: 38px minmax(72px, 1fr) 38px;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid rgba(23, 107, 80, .18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .9);
+}
+
+.body-view-switch button {
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #41675c;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.body-view-switch button:hover,
+.body-view-switch button:focus-visible {
+  border-color: #9dcdbb;
+  background: #edf8f3;
+  color: #0f5c43;
+}
+
+.body-view-switch button.active {
+  border-color: #176b50;
+  background: #176b50;
+  color: #ffffff;
+}
+
+.body-stage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 322px;
+  display: grid;
+  place-items: center;
+}
+
+.body-stage .body-silhouette {
+  filter: drop-shadow(0 16px 15px rgba(17, 67, 52, .18));
+}
+
+.body-stage.view-izquierda .marker-head,
+.body-stage.view-derecha .marker-head {
+  left: 63px;
+  top: 48px;
+}
+
+.body-stage.view-izquierda .marker-chest,
+.body-stage.view-derecha .marker-chest {
+  left: 65px;
+  top: 112px;
+}
+
+.body-stage.view-izquierda .marker-abdomen,
+.body-stage.view-derecha .marker-abdomen {
+  left: 65px;
+  top: 151px;
+}
+
+.body-stage.view-izquierda .marker-arm,
+.body-stage.view-derecha .marker-arm {
+  right: 53px !important;
+  top: 143px !important;
+}
+
+.body-stage.view-izquierda .marker-leg,
+.body-stage.view-derecha .marker-leg {
+  bottom: 61px !important;
+}
+
+.body-zone-state {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(23, 107, 80, .18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .92);
+  text-align: center;
+}
+
+.body-zone-state span,
+.body-zone-state strong {
+  display: block;
+}
+
+.body-zone-state span {
+  color: #668077;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.body-zone-state strong {
+  margin-top: 2px;
+  color: #125b45;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .body-panel {
+    min-height: 430px;
+  }
+
+  .body-view-header,
+  .body-zone-state {
+    max-width: 260px;
+  }
 }

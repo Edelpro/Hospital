@@ -64,6 +64,8 @@
         type="button"
         *ngFor="let plantilla of plantillas; trackBy: trackByPlantilla"
         [ngClass]="plantilla.clase"
+        [class.template-selected]="plantillaSeleccionada === plantilla.id"
+        [attr.aria-pressed]="plantillaSeleccionada === plantilla.id"
         (click)="aplicarPlantilla(plantilla)">
         <strong>{{ plantilla.titulo }}</strong>
         <span>{{ plantilla.detalle }}</span>
@@ -94,6 +96,7 @@
           <label>
             Tipo de evolución
             <select [(ngModel)]="formulario.tipoEvolucion">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let tipo of tiposEvolucion" [ngValue]="tipo">
                 {{ tipo }}
               </option>
@@ -103,6 +106,7 @@
           <label>
             Condición del paciente
             <select [(ngModel)]="formulario.condicionPaciente">
+              <option value="" disabled>Seleccione una opción</option>
               <option *ngFor="let condicion of condicionesPaciente" [ngValue]="condicion">
                 {{ condicion }}
               </option>
@@ -186,16 +190,7 @@
           <span>Una evolución debe incluir objetivo, análisis y plan. Evite guardar notas vacías.</span>
         </div>
 
-        <div class="template-save-row">
-          <label>
-            Nombre de la plantilla
-            <input type="text" maxlength="60" placeholder="Ejemplo: Reevaluación favorable" [(ngModel)]="nombreNuevaPlantilla" [disabled]="soloLectura">
-          </label>
-          <small>Complete la evolución y guárdela como opción rápida para este equipo.</small>
-        </div>
-
         <div class="form-actions">
-          <button class="clear-button" type="button" (click)="crearPlantillaPersonalizada()" [disabled]="soloLectura || guardandoEvolucion"><i class="bx bx-bookmark-plus"></i> Crear plantilla</button>
           <button
             class="save-button"
             type="button"

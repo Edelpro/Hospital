@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Threading.RateLimiting;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -29,15 +32,59 @@ var configuredConnection = builder.Configuration.GetConnectionString("DefaultCon
 builder.Services.AddDbContext<Hcu008DbContext>(options =>
     options.UseSqlServer(configuredConnection));
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+  options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+  if (builder.Configuration.GetValue<bool>("Security:TrustForwardedHeaders"))
+  {
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+  }
+});
+
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AngularPolicy", policy =>
   {
-    policy.WithOrigins(
-            "http://localhost:4200"
-        )
+    var origenesConfigurados = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? Array.Empty<string>();
+
+    policy.SetIsOriginAllowed(origin =>
+        origenesConfigurados.Contains(origin, StringComparer.OrdinalIgnoreCase) ||
+        (builder.Environment.IsDevelopment() &&
+         Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+         (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+          uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))))
         .AllowAnyHeader()
         .AllowAnyMethod();
+  });
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+  options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+  options.AddPolicy("login", context =>
+  {
+    var claveCliente = context.Connection.RemoteIpAddress?.ToString() ?? "desconocido";
+    return RateLimitPartition.GetFixedWindowLimiter(claveCliente, _ => new FixedWindowRateLimiterOptions
+    {
+      PermitLimit = 10,
+      Window = TimeSpan.FromMinutes(1),
+      QueueLimit = 0,
+      AutoReplenishment = true
+    });
+  });
+  options.AddPolicy("public-request", context =>
+  {
+    var claveCliente = context.Connection.RemoteIpAddress?.ToString() ?? "desconocido";
+    return RateLimitPartition.GetFixedWindowLimiter(claveCliente, _ => new FixedWindowRateLimiterOptions
+    {
+      PermitLimit = 5,
+      Window = TimeSpan.FromMinutes(10),
+      QueueLimit = 0,
+      AutoReplenishment = true
+    });
   });
 });
 
@@ -48,6 +95,12 @@ if (string.IsNullOrWhiteSpace(jwtKey))
   throw new InvalidOperationException("No se configuró Jwt:Key en appsettings.json.");
 }
 
+if (builder.Configuration.GetValue<bool>("Security:RequireExternalSecrets") &&
+    jwtKey.Contains("DESARROLLO", StringComparison.OrdinalIgnoreCase))
+{
+  throw new InvalidOperationException("Producción requiere una clave JWT externa; no se permite la clave de desarrollo.");
+}
+
 builder.Services.AddAuthentication(options =>
 {
   options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -55,7 +108,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-  options.RequireHttpsMetadata = false;
+  options.RequireHttpsMetadata = builder.Configuration.GetValue<bool>("Security:RequireHttps");
   options.SaveToken = false;
 
   options.Events = new JwtBearerEvents
@@ -156,6 +209,14 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
+if (builder.Configuration.GetValue<bool>("Security:RequireHttps"))
+{
+  app.UseHsts();
+  app.UseHttpsRedirection();
+}
+
 // Permite preparar una base nueva de forma explícita sin ejecutar migraciones
 // durante cada inicio normal de la API.
 if (builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
@@ -165,19 +226,67 @@ if (builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
   await migrationContext.Database.MigrateAsync();
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+  app.UseSwagger();
+  app.UseSwaggerUI();
+}
+
+app.Use(async (context, next) =>
+{
+  context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+  context.Response.Headers["X-Frame-Options"] = "DENY";
+  context.Response.Headers["Referrer-Policy"] = "same-origin";
+  context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+  await next();
+});
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseCors("AngularPolicy");
+app.UseRateLimiter();
 
 app.UseAuthentication();
+app.UseMiddleware<RegistroAccesoMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/health/live", () => Results.Ok(new { estado = "activo" }))
+    .AllowAnonymous();
+app.MapGet("/health/ready", async (Hcu008DbContext db, CancellationToken cancellationToken) =>
+    await db.Database.CanConnectAsync(cancellationToken)
+        ? Results.Ok(new { estado = "listo", baseDatos = "conectada" })
+        : Results.Problem("La base de datos no está disponible.", statusCode: 503))
+    .AllowAnonymous();
 app.MapFallbackToFile("index.html").AllowAnonymous();
+
+if (builder.Configuration.GetValue<bool>("BootstrapAdmin:Enabled"))
+using (var bootstrapScope = app.Services.CreateScope())
+{
+  var context = bootstrapScope.ServiceProvider.GetRequiredService<Hcu008DbContext>();
+  if (!await context.UsuariosSistema.AnyAsync())
+  {
+    var correo = builder.Configuration["BootstrapAdmin:Email"]?.Trim().ToLowerInvariant();
+    var clave = builder.Configuration["BootstrapAdmin:Password"];
+    if (string.IsNullOrWhiteSpace(correo) || string.IsNullOrWhiteSpace(clave) || clave.Length < 12)
+    {
+      throw new InvalidOperationException("BootstrapAdmin requiere correo y una contraseña de al menos 12 caracteres.");
+    }
+
+    context.UsuariosSistema.Add(new UsuarioSistema
+    {
+      Nombres = builder.Configuration["BootstrapAdmin:Nombres"]?.Trim() ?? "Administrador",
+      Apellidos = builder.Configuration["BootstrapAdmin:Apellidos"]?.Trim() ?? "HCU 008",
+      Correo = correo,
+      Rol = "Admin",
+      Activo = true,
+      ClaveHash = PasswordHelper.HashPassword(clave),
+      FechaCreacion = DateTime.Now
+    });
+    await context.SaveChangesAsync();
+  }
+}
 
 if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Seed:Enabled"))
 using (var scope = app.Services.CreateScope())

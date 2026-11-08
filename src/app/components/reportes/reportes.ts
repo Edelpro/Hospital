@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 
 import { Atencion } from '../../models/atencion.model';
 import { ReporteAtencion, ReporteService } from '../../services/reporte';
+import { ReportePdfService } from '../../services/reporte-pdf.service';
 import { UiMessageService } from '../../shared/ui-message.service';
 
-type VistaDestinoReportes = 'inicio' | 'pacientes' | 'egreso';
+type VistaDestinoReportes = 'inicio' | 'pacientes' | 'egreso' | 'mensajeria';
 
 @Component({
   selector: 'app-reportes',
@@ -20,9 +21,11 @@ export class Reportes implements OnChanges {
 
   reporte?: ReporteAtencion;
   cargandoReporte = false;
+  generandoPdf = false;
 
   constructor(
     private reporteService: ReporteService,
+    private reportePdfService: ReportePdfService,
     private uiMessageService: UiMessageService
   ) {}
 
@@ -67,6 +70,22 @@ export class Reportes implements OnChanges {
     setTimeout(() => {
       window.print();
     }, 150);
+  }
+
+  async descargarReportePdf(): Promise<void> {
+    if (!this.reporte || this.cargandoReporte || this.generandoPdf) return;
+
+    this.generandoPdf = true;
+    try {
+      const resultado = await this.reportePdfService.generar(this.reporte);
+      this.reportePdfService.descargar(resultado.archivo, resultado.nombre);
+      this.uiMessageService.exito('PDF generado', `Se descargó ${resultado.nombre}.`);
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      this.uiMessageService.error('No se pudo generar el PDF', 'Recargue el reporte e inténtelo nuevamente.');
+    } finally {
+      this.generandoPdf = false;
+    }
   }
 
   obtenerAtencion(): any {
