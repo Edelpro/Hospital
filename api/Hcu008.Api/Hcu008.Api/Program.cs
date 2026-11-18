@@ -92,7 +92,7 @@ var jwtKey = builder.Configuration["Jwt:Key"];
 
 if (string.IsNullOrWhiteSpace(jwtKey))
 {
-  throw new InvalidOperationException("No se configuró Jwt:Key en appsettings.json.");
+  throw new InvalidOperationException("No se configuró Jwt:Key. En desarrollo está en appsettings.Development.json; en producción defina la variable de entorno Jwt__Key.");
 }
 
 if (builder.Configuration.GetValue<bool>("Security:RequireExternalSecrets") &&
